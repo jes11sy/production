@@ -218,18 +218,19 @@ async def update_existing_request(
         
         logger.info(f"✅ Успешно обновлена заявка {request_id}")
         
-        # Преобразуем SQLAlchemy модель в Pydantic для правильной сериализации  
+        # Преобразуем SQLAlchemy модель в Pydantic для правильной сериализации (Pydantic v1)
         try:
-            # Используем from_orm для преобразования SQLAlchemy в Pydantic
+            # В Pydantic v1 используем from_orm() для преобразования SQLAlchemy в Pydantic
             response_data = RequestResponse.from_orm(updated_request)
             logger.info(f"✅ Успешно сериализована заявка {request_id}")
             return response_data
         except Exception as serialize_error:
-            logger.error(f"❌ Ошибка сериализации заявки {request_id}: {str(serialize_error)}", exc_info=True)
+            logger.error(f"❌ Ошибка from_orm для заявки {request_id}: {str(serialize_error)}", exc_info=True)
             
-            # Если from_orm не работает, создаем вручную
+            # Пробуем создать минимальный ответ для Pydantic v1
             try:
-                response_dict = {
+                # Создаем словарь с базовыми полями
+                basic_dict = {
                     "id": updated_request.id,
                     "created_at": updated_request.created_at,
                     "updated_at": updated_request.updated_at,
@@ -245,10 +246,10 @@ async def update_existing_request(
                     "status": updated_request.status,
                     "master_id": updated_request.master_id,
                     "master_notes": updated_request.master_notes,
-                    "result": updated_request.result,
-                    "expenses": updated_request.expenses,
-                    "net_amount": updated_request.net_amount,
-                    "master_handover": updated_request.master_handover,
+                    "result": float(updated_request.result) if updated_request.result else 0.0,
+                    "expenses": float(updated_request.expenses) if updated_request.expenses else 0.0,
+                    "net_amount": float(updated_request.net_amount) if updated_request.net_amount else 0.0,
+                    "master_handover": float(updated_request.master_handover) if updated_request.master_handover else 0.0,
                     "ats_number": updated_request.ats_number,
                     "call_center_name": updated_request.call_center_name,
                     "call_center_notes": updated_request.call_center_notes,
@@ -256,25 +257,22 @@ async def update_existing_request(
                     "bso_file_path": updated_request.bso_file_path,
                     "expense_file_path": updated_request.expense_file_path,
                     "recording_file_path": updated_request.recording_file_path,
-                    # Добавляем связанные объекты как None если они не загружены
-                    "advertising_campaign": None,
-                    "city": None,
-                    "request_type": None,
-                    "direction": None,
-                    "master": None,
-                    "files": []
                 }
                 
-                manual_response = RequestResponse(**response_dict)
-                logger.info(f"✅ Создан ручной ответ для заявки {request_id}")
+                # Используем parse_obj для Pydantic v1
+                manual_response = RequestResponse.parse_obj(basic_dict)
+                logger.info(f"✅ Создан ручной ответ через parse_obj для заявки {request_id}")
                 return manual_response
                 
-            except Exception as manual_error:
-                logger.error(f"❌ Ошибка создания ручного ответа для заявки {request_id}: {str(manual_error)}", exc_info=True)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Заявка обновлена, но не удалось сформировать ответ: {str(manual_error)}"
-                )
+            except Exception as parse_error:
+                logger.error(f"❌ Ошибка parse_obj для заявки {request_id}: {str(parse_error)}", exc_info=True)
+                
+                # Последняя попытка - возвращаем простой JSON ответ
+                return {
+                    "id": updated_request.id,
+                    "status": updated_request.status,
+                    "message": "Заявка успешно обновлена"
+                }
     except HTTPException as http_ex:
         logger.error(f"HTTP ошибка при обновлении заявки {request_id}: {http_ex.detail}")
         raise
