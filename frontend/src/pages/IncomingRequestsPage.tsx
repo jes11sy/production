@@ -188,3 +188,5 @@ export const IncomingRequestsPage: React.FC = () => {
     </div>
   );
 }; 
+
+export default IncomingRequestsPage; 
