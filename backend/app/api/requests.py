@@ -217,7 +217,17 @@ async def update_existing_request(
             raise HTTPException(status_code=404, detail="Request not found")
         
         logger.info(f"✅ Успешно обновлена заявка {request_id}")
-        return updated_request
+        
+        # Преобразуем SQLAlchemy модель в Pydantic для правильной сериализации  
+        try:
+            response_data = RequestResponse.model_validate(updated_request)
+            logger.info(f"✅ Успешно сериализована заявка {request_id}")
+            return response_data
+        except Exception as serialize_error:
+            logger.error(f"❌ Ошибка сериализации заявки {request_id}: {str(serialize_error)}", exc_info=True)
+            logger.info(f"⚠️ Возвращаем упрощенную версию ответа для заявки {request_id}")
+            # Возвращаем SQLAlchemy модель как есть - FastAPI справится с базовой сериализацией
+            return updated_request
     except HTTPException as http_ex:
         logger.error(f"HTTP ошибка при обновлении заявки {request_id}: {http_ex.detail}")
         raise
