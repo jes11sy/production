@@ -81,6 +81,7 @@ const RequestViewPage: React.FC = () => {
         net_amount: editForm.net_amount,
         expenses: editForm.expense,
         result: String(editForm.result),
+        master_handover: masterHandover,
       };
       await requestsApi.updateRequest(requestId, updateData);
       
