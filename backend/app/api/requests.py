@@ -39,6 +39,9 @@ from ..core.cors_utils import create_cors_response, get_cors_headers
 from fastapi import Response
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/requests", tags=["requests"])
 
@@ -203,10 +206,26 @@ async def update_existing_request(
     current_user: Master | Employee | Administrator = Depends(require_callcenter)
 ):
     """Обновление заявки"""
-    updated_request = await update_request(db=db, request_id=request_id, request=request)
-    if updated_request is None:
-        raise HTTPException(status_code=404, detail="Request not found")
-    return updated_request
+    try:
+        logger.info(f"Updating request {request_id} with data: {request.dict()}")
+        updated_request = await update_request(db=db, request_id=request_id, request=request)
+        if updated_request is None:
+            raise HTTPException(status_code=404, detail="Request not found")
+        logger.info(f"Successfully updated request {request_id}")
+        return updated_request
+    except HTTPException:
+        # Пропускаем HTTP исключения как есть
+        raise
+    except Exception as e:
+        logger.error(f"Error updating request {request_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail={
+                "error": f"Failed to update request: {str(e)}",
+                "type": type(e).__name__,
+                "request_id": request_id
+            }
+        )
 
 
 @router.delete("/{request_id}/")
