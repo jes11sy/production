@@ -403,8 +403,8 @@ async def update_request(db: AsyncSession, request_id: int, request: RequestUpda
                 select(Transaction).where(Transaction.notes == f"Приход по заявке {request_id}")
             )
             transaction = transaction_result.scalar_one_or_none()
-            # Если новый статус done
-            if db_request.status == "done":
+            # Если новый статус Готово
+            if db_request.status == "Готово":
                 if transaction:
                     # Обновляем существующую транзакцию
                     transaction.amount = db_request.master_handover
@@ -423,8 +423,8 @@ async def update_request(db: AsyncSession, request_id: int, request: RequestUpda
                         notes=f"Приход по заявке {request_id}"
                     )
                     db.add(new_transaction)
-            # Если статус был done, а стал другой — удаляем транзакцию
-            elif old_status == "done" and db_request.status != "done":
+            # Если статус был Готово, а стал другой — удаляем транзакцию
+            elif old_status == "Готово" and db_request.status != "Готово":
                 if transaction:
                     await db.delete(transaction)
         await db.commit()
