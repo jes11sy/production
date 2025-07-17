@@ -421,7 +421,8 @@ class TokenResponse(BaseModel):
                     "user_type": "master",
                     "role": "master",
                     "user_id": 1,
-                    "city_id": 1
+                    "city_id": 1,
+                    "csrf_token": "abc123..."
                 }
             ]
         }
@@ -433,6 +434,7 @@ class TokenResponse(BaseModel):
     role: str = Field(..., description="Роль пользователя", example="master")
     user_id: int = Field(..., description="ID пользователя", example=1)
     city_id: Optional[int] = Field(None, description="ID города пользователя", example=1)
+    csrf_token: str = Field(..., description="CSRF токен для защиты от атак", example="abc123def456...")
 
 
 class ErrorResponse(BaseModel):
