@@ -38,7 +38,6 @@ interface RequestFilters {
 
 // Маппинги статусов на русский язык с цветами
 const statusMappings = {
-  'Новая': { text: 'Новая', color: 'primary' as const },
   'Ожидает': { text: 'Ожидает', color: 'warning' as const },
   'Ожидает Принятия': { text: 'Ожидает Принятия', color: 'primary' as const },
   'Принял': { text: 'Принял', color: 'secondary' as const },
@@ -47,24 +46,19 @@ const statusMappings = {
   'Модерн': { text: 'Модерн', color: 'primary' as const },
   'Готово': { text: 'Готово', color: 'success' as const },
   'Отказ': { text: 'Отказ', color: 'danger' as const },
-  'Перезвонить': { text: 'Перезвонить', color: 'warning' as const },
-  'ТНО': { text: 'ТНО', color: 'secondary' as const },
 };
 
 // Приоритеты статусов для сортировки
 const getStatusPriority = (status: string): number => {
   const priorities: { [key: string]: number } = {
-    'Новая': 1,
-    'Перезвонить': 2,
-    'ТНО': 3,
-    'Ожидает': 4,
-    'Ожидает Принятия': 5,
-    'Принял': 6,
-    'В пути': 7,
-    'В работе': 8,
-    'Модерн': 9,
-    'Готово': 10,
-    'Отказ': 11,
+    'Ожидает': 1,
+    'Ожидает Принятия': 2,
+    'Принял': 3,
+    'В пути': 4,
+    'В работе': 5,
+    'Модерн': 6,
+    'Готово': 7,
+    'Отказ': 8,
   };
   return priorities[status] || 999;
 };
@@ -131,6 +125,19 @@ export const RequestsPage: React.FC = () => {
   // Фильтрация и сортировка заявок
   const filteredRequests = useMemo(() => {
     let result = requests;
+
+    // Фильтрация по отображаемым статусам
+    const allowedStatuses = [
+      'Ожидает', 
+      'Ожидает Принятия', 
+      'Принял', 
+      'В пути', 
+      'В работе', 
+      'Модерн', 
+      'Готово', 
+      'Отказ'
+    ];
+    result = result.filter(request => allowedStatuses.includes(request.status));
 
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
@@ -244,9 +251,6 @@ export const RequestsPage: React.FC = () => {
               handleFilterChange('status', value);
             }}
           >
-            <SelectItem key="Новая">Новая</SelectItem>
-            <SelectItem key="Перезвонить">Перезвонить</SelectItem>
-            <SelectItem key="ТНО">ТНО</SelectItem>
             <SelectItem key="Ожидает">Ожидает</SelectItem>
             <SelectItem key="Ожидает Принятия">Ожидает Принятия</SelectItem>
             <SelectItem key="Принял">Принял</SelectItem>
