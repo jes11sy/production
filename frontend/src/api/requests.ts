@@ -10,28 +10,44 @@ import type {
 
 // Реэкспорт основных типов для удобства
 export type { Request, RequestType, Direction, Master } from '../types/api';
-
-// Локальные CRUD типы для совместимости
 export type CreateRequest = CreateRequestData;
 export type UpdateRequest = UpdateRequestData;
 
-// API методы для заявок
 export const requestsApi = {
   // Получение списка заявок
   getRequests: async (params?: {
-    page?: number;
-    size?: number;
+    skip?: number;
+    limit?: number;
     status?: string;
     city_id?: number;
     master_id?: number;
+    search?: string;
+    date_from?: string;
+    date_to?: string;
   }): Promise<Request[]> => {
-    const response = await apiClient.get('/requests/', { params });
+    const response = await apiClient.get('/requests/', { 
+      params,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return response.data;
   },
 
   // Получение заявки по ID
   getRequest: async (id: number): Promise<Request> => {
-    const response = await apiClient.get(`/requests/${id}/`);
+    const response = await apiClient.get(`/requests/${id}/`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
+      params: {
+        _t: Date.now() // Добавляем timestamp для гарантированного обхода кеша
+      }
+    });
     return response.data;
   },
 
@@ -54,54 +70,62 @@ export const requestsApi = {
 
   // Получение типов заявок
   getRequestTypes: async (): Promise<RequestType[]> => {
-    const response = await apiClient.get('/requests/request-types/');
+    const response = await apiClient.get('/requests/request-types/', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return response.data;
   },
 
   // Получение направлений
   getDirections: async (): Promise<Direction[]> => {
-    const response = await apiClient.get('/requests/directions/');
+    const response = await apiClient.get('/requests/directions/', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return response.data;
   },
 
-  // Получение списка мастеров
+  // Получение мастеров
   getMasters: async (): Promise<Master[]> => {
-    try {
-      const response = await apiClient.get('/requests/masters/');
-      return Array.isArray(response.data) ? response.data : [];
-    } catch (error) {
-      console.error('Ошибка загрузки мастеров:', error);
-      return [];
-    }
-  },
-
-  // Загрузка БСО к заявке
-  uploadBso: async (requestId: number, file: File): Promise<{ file_path: string }> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await apiClient.post(`/requests/${requestId}/upload-bso/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    const response = await apiClient.get('/requests/masters/', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
     return response.data;
   },
 
-  // Загрузка чека расхода к заявке
-  uploadExpense: async (requestId: number, file: File): Promise<{ file_path: string }> => {
+  // Загрузка файлов
+  uploadBso: async (requestId: number, file: File): Promise<void> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post(`/requests/${requestId}/upload-expense/`, formData, {
+    await apiClient.post(`/requests/${requestId}/upload-bso/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    return response.data;
   },
 
-  // Загрузка аудиозаписи к заявке
-  uploadRecording: async (requestId: number, file: File): Promise<{ file_path: string }> => {
+  uploadExpense: async (requestId: number, file: File): Promise<void> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post(`/requests/${requestId}/upload-recording/`, formData, {
+    await apiClient.post(`/requests/${requestId}/upload-expense/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    return response.data;
-  }
+  },
+
+  uploadRecording: async (requestId: number, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await apiClient.post(`/requests/${requestId}/upload-recording/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 }; 
