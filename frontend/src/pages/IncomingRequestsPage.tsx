@@ -2,9 +2,6 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useApiData } from '../hooks/useApiData';
 import { requestsApi, type Request } from '../api/requests';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { Chip } from '@heroui/react';
-import { Card, CardHeader, CardBody } from '@heroui/react';
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react';
 
 interface StatsCardProps {
   title: string;
@@ -13,31 +10,26 @@ interface StatsCardProps {
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({ title, count, color = 'primary' }) => (
-  <Card className="w-full">
-    <CardHeader className="flex gap-3">
-      <div className="flex flex-col">
-        <p className="text-md">{title}</p>
-        <p className={`text-2xl font-bold text-${color}`}>{count}</p>
-      </div>
-    </CardHeader>
-  </Card>
+  <div className="bg-white p-4 rounded-lg shadow">
+    <h3 className="text-lg font-medium text-gray-700">{title}</h3>
+    <p className={`text-2xl font-bold ${
+      color === 'primary' ? 'text-blue-600' :
+      color === 'success' ? 'text-green-600' :
+      color === 'warning' ? 'text-yellow-600' :
+      color === 'danger' ? 'text-red-600' : 'text-gray-600'
+    }`}>{count}</p>
+  </div>
 );
 
-export const IncomingRequestsPage: React.FC = () => {
+const IncomingRequestsPage: React.FC = () => {
+  const { data: requests, loading, error, refetch } = useApiData<Request[]>(
+    async () => await requestsApi.getRequests(),
+    {
+      errorMessage: 'Ошибка загрузки входящих заявок'
+    }
+  );
+
   const [mounted, setMounted] = useState(false);
-
-  // Загрузка заявок через существующий хук
-  const fetchRequests = useCallback(() => requestsApi.getRequests(), []);
-  const { 
-    data: requestsData, 
-    loading,
-    error,
-    refetch 
-  } = useApiData(fetchRequests, {
-    errorMessage: 'Ошибка загрузки заявок'
-  });
-
-  const requests = useMemo(() => requestsData || [], [requestsData]);
 
   useEffect(() => {
     setMounted(true);
@@ -46,36 +38,36 @@ export const IncomingRequestsPage: React.FC = () => {
   // Фильтрация входящих заявок
   const allowedStatuses = ['Новая', 'Перезвонить', 'ТНО', 'Отказ'];
   const filteredRequests = useMemo(() => {
-    return requests.filter((r: Request) => allowedStatuses.includes(r.status));
+    if (!requests) return [];
+    return requests.filter(r => allowedStatuses.includes(r.status));
   }, [requests]);
 
-  // Статистика
+  // Статистика по статусам
   const stats = useMemo(() => {
     const total = filteredRequests.length;
-    const newCount = filteredRequests.filter((r: Request) => r.status === 'Новая').length;
-    const recallCount = filteredRequests.filter((r: Request) => r.status === 'Перезвонить').length;
-    const refusedCount = filteredRequests.filter((r: Request) => r.status === 'Отказ').length;
-    const tnoCount = filteredRequests.filter((r: Request) => r.status === 'ТНО').length;
+    const newRequests = filteredRequests.filter(r => r.status === 'Новая').length;
+    const callbacks = filteredRequests.filter(r => r.status === 'Перезвонить').length;
+    const refused = filteredRequests.filter(r => r.status === 'Отказ').length;
 
-    return { total, newCount, recallCount, refusedCount, tnoCount };
+    return { total, newRequests, callbacks, refused };
   }, [filteredRequests]);
 
   // Вспомогательные функции
   const getStatusBadge = useCallback((status: string) => {
     const statusConfig = {
-      'Новая': { label: 'Новая', color: 'primary' as const },
-      'Перезвонить': { label: 'Перезвон', color: 'warning' as const },
-      'ТНО': { label: 'ТНО', color: 'primary' as const },
-      'Отказ': { label: 'Отказ', color: 'danger' as const }
+      'Новая': { label: 'Новая', color: 'bg-blue-100 text-blue-800' },
+      'Перезвонить': { label: 'Перезвон', color: 'bg-yellow-100 text-yellow-800' },
+      'ТНО': { label: 'ТНО', color: 'bg-gray-100 text-gray-800' },
+      'Отказ': { label: 'Отказ', color: 'bg-red-100 text-red-800' }
     };
     const config = statusConfig[status as keyof typeof statusConfig] || { 
       label: status, 
-      color: 'primary' as const 
+      color: 'bg-gray-100 text-gray-800'
     };
     return (
-      <Chip color={config.color} size="sm" variant="flat">
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
         {config.label}
-      </Chip>
+      </span>
     );
   }, []);
 
@@ -98,95 +90,117 @@ export const IncomingRequestsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-600">
-          Ошибка загрузки входящих заявок: {error}
-        </div>
+      <div className="text-center py-8">
+        <p className="text-red-600">Ошибка загрузки данных: {error}</p>
+        <button 
+          onClick={refetch}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Повторить
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-screen p-4">
-      {/* Заголовок */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Входящие заявки</h1>
-        <p className="text-gray-600">
-          Заявки со статусами: Новая, Перезвонить, ТНО, Отказ
-        </p>
-      </div>
-
+    <div className="p-6 min-h-screen bg-gray-50">
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Входящие заявки</h1>
+      
       {/* Статистика */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatsCard title="Всего входящих" count={stats.total} color="primary" />
-        <StatsCard title="Новые" count={stats.newCount} color="success" />
-        <StatsCard title="Перезвон" count={stats.recallCount} color="warning" />
-        <StatsCard title="ТНО" count={stats.tnoCount} color="primary" />
-        <StatsCard title="Отказы" count={stats.refusedCount} color="danger" />
+        <StatsCard title="Новые" count={stats.newRequests} color="success" />
+        <StatsCard title="Перезвон" count={stats.callbacks} color="warning" />
+        <StatsCard title="Отказы" count={stats.refused} color="danger" />
       </div>
 
-      {/* Таблица на весь экран */}
-      <Card className="w-full">
-        <CardBody className="p-0">
-          <Table 
-            aria-label="Таблица входящих заявок"
-            className="w-full"
-            removeWrapper
-            isStriped
-          >
-            <TableHeader>
-              <TableColumn key="id" className="min-w-[60px]">ID</TableColumn>
-              <TableColumn key="advertising_campaign" className="min-w-[120px]">РК</TableColumn>
-              <TableColumn key="city" className="min-w-[100px]">Город</TableColumn>
-              <TableColumn key="request_type" className="min-w-[120px]">Тип заявки</TableColumn>
-              <TableColumn key="client_phone" className="min-w-[140px]">Телефон клиента</TableColumn>
-              <TableColumn key="client_name" className="min-w-[150px]">Имя клиента</TableColumn>
-              <TableColumn key="address" className="min-w-[200px]">Адрес</TableColumn>
-              <TableColumn key="meeting_date" className="min-w-[160px]">Дата встречи</TableColumn>
-              <TableColumn key="direction" className="min-w-[120px]">Направление</TableColumn>
-              <TableColumn key="problem" className="min-w-[200px]">Проблема</TableColumn>
-              <TableColumn key="status" className="min-w-[100px]">Статус</TableColumn>
-              <TableColumn key="ats_number" className="min-w-[100px]">Номер АТС</TableColumn>
-              <TableColumn key="call_center_name" className="min-w-[120px]">Имя КЦ</TableColumn>
-              <TableColumn key="call_center_notes" className="min-w-[200px]">Заметка КЦ</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="Входящие заявки не найдены">
-              {filteredRequests.map((request: Request) => (
-                <TableRow key={request.id}>
-                  <TableCell>{request.id}</TableCell>
-                  <TableCell>{request.advertising_campaign?.name || '-'}</TableCell>
-                  <TableCell>{request.city?.name || '-'}</TableCell>
-                  <TableCell>{request.request_type?.name || '-'}</TableCell>
-                  <TableCell>{request.client_phone || '-'}</TableCell>
-                  <TableCell>{request.client_name || '-'}</TableCell>
-                  <TableCell>
-                    <div className="max-w-[200px] truncate" title={request.address || '-'}>
+      {/* Таблица */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">Список входящих заявок</h2>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">РК</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Город</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип заявки</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Телефон</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Адрес</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата встречи</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Направление</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Проблема</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">АТС</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">КЦ</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Заметка КЦ</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredRequests.length === 0 ? (
+                <tr>
+                  <td colSpan={14} className="px-6 py-8 text-center text-gray-500">
+                    Входящие заявки не найдены
+                  </td>
+                </tr>
+              ) : (
+                filteredRequests.map((request) => (
+                  <tr key={request.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {request.id}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.advertising_campaign?.name || '-'}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.city?.name || '-'}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.request_type?.name || '-'}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.client_phone || '-'}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.client_name || '-'}
+                    </td>
+                    <td className="px-3 py-4 text-sm text-gray-700 max-w-xs truncate">
                       {request.address || '-'}
-                    </div>
-                  </TableCell>
-                  <TableCell>{formatDate(request.meeting_date)}</TableCell>
-                  <TableCell>{request.direction?.name || '-'}</TableCell>
-                  <TableCell>
-                    <div className="max-w-[200px] truncate" title={request.problem || '-'}>
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {formatDate(request.meeting_date)}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.direction?.name || '-'}
+                    </td>
+                    <td className="px-3 py-4 text-sm text-gray-700 max-w-xs truncate">
                       {request.problem || '-'}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  <TableCell>{request.ats_number || '-'}</TableCell>
-                  <TableCell>{request.call_center_name || '-'}</TableCell>
-                  <TableCell>
-                    <div className="max-w-[200px] truncate" title={request.call_center_notes || '-'}>
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm">
+                      {getStatusBadge(request.status)}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.ats_number || '-'}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {request.call_center_name || '-'}
+                    </td>
+                    <td className="px-3 py-4 text-sm text-gray-700 max-w-xs truncate">
                       {request.call_center_notes || '-'}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
-}; 
+};
 
 export default IncomingRequestsPage; 
