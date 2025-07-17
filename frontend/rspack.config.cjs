@@ -127,10 +127,10 @@ module.exports = {
     proxy: [
       {
         context: ['/api'],
-        target: 'http://localhost:8000',
+        target: process.env.NODE_ENV === 'production' ? 'https://lead-schem.ru' : 'http://localhost:8000',
         changeOrigin: true,
-        secure: false,
-        cookieDomainRewrite: 'localhost',
+        secure: process.env.NODE_ENV === 'production',
+        cookieDomainRewrite: process.env.NODE_ENV === 'production' ? 'lead-schem.ru' : 'localhost',
         cookiePathRewrite: '/',
         onProxyReq: (proxyReq, req, res) => {
           // Передаем cookies

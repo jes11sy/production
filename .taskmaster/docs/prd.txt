@@ -1,0 +1,73 @@
+# Product Requirements Document: Исправление продакшн конфигурации lead-schem.ru
+
+## Обзор проекта
+Необходимо провести полный аудит и исправление конфигурации проекта для корректного развертывания в продакшн окружении на домене lead-schem.ru.
+
+## Техническая информация продакшн окружения
+- **Сервер**: 194.87.201.221 (SSH: root@194.87.201.221)
+- **Домен**: lead-schem.ru
+- **База данных**: PostgreSQL на 74ac89b6f8cc981b84f28f3b.twc1.net:5432
+- **Redis**: Локальная установка с паролем
+- **SSL**: Let's Encrypt сертификаты
+
+## Критические проблемы, требующие исправления
+
+### 1. CORS Configuration Issues
+- Backend API файлы содержат hardcoded localhost:3000 в CORS headers
+- Файлы: auth.py, users.py, requests.py, transactions.py
+- Нужно заменить на использование конфигурации из settings
+
+### 2. Frontend Configuration
+- rspack.config.cjs использует localhost:8000 для dev proxy
+- Нужно добавить условия для продакшн сборки
+- Проверить production-server.cjs настройки
+
+### 3. Environment Configuration
+- Создать корректный .env файл на основе env.txt
+- Удалить env.txt из .gitignore
+- Проверить все переменные окружения в docker-compose.production.yml
+
+### 4. Deployment Scripts
+- Проверить и обновить все скрипты в deployment/
+- Исправить health check URLs в docker-compose
+- Обновить nginx конфигурацию для продакшн
+
+### 5. Monitoring Configuration
+- Исправить prometheus.yml localhost настройки
+- Обновить grafana конфигурацию
+- Проверить telegram alerts настройки
+
+### 6. Backend API Configuration
+- Обновить api_docs.py для корректных server URLs
+- Проверить config.py CORS origins логику
+- Исправить hardcoded URLs в core компонентах
+
+### 7. Testing Configuration
+- Обновить тестовые файлы для поддержки продакшн URLs
+- Проверить playwright.config.ts настройки
+- Исправить integration test URLs
+
+### 8. Documentation Updates
+- Обновить все README файлы с продакшн URLs
+- Исправить API документацию
+- Обновить deployment guides
+
+## Требования к безопасности
+- Все секретные ключи должны использовать переменные окружения
+- CORS origins должны быть ограничены продакшн доменом
+- SSL/TLS должен быть правильно настроен
+- Rate limiting должен быть активен
+
+## Критерии готовности
+- Все localhost URLs заменены на продакшн конфигурацию
+- CORS работает корректно с lead-schem.ru
+- Docker compose production готов к развертыванию
+- Мониторинг системы настроен корректно
+- Документация обновлена с актуальными URLs
+- Все тесты проходят с продакшн конфигурацией
+
+## Дополнительные требования
+- Создать backup скрипты для базы данных
+- Настроить логирование для продакшн
+- Проверить performance настройки
+- Убедиться в корректности email уведомлений 

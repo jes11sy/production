@@ -35,6 +35,7 @@ from ..core.crud import get_request_types
 from ..core.models import RequestType
 from ..core.models import Direction
 from ..core.models import AdvertisingCampaign
+from ..core.cors_utils import create_cors_response, get_cors_headers
 from fastapi import Response
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
@@ -381,15 +382,7 @@ async def get_callcenter_report(
 @router.options("/{request_id}/")
 async def options_request(request_id: int):
     """OPTIONS handler для CORS preflight запросов"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-        }
-    )
+    return create_cors_response(allowed_methods="GET, POST, PUT, DELETE, OPTIONS")
 
 # Общий роут с параметром должен быть ПОСЛЕ всех специфических роутов
 @router.get("/{request_id}/")

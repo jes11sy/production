@@ -18,6 +18,7 @@ from ..core.schemas import (
     CityResponse, RoleResponse
 )
 from ..core.models import Master, Employee, Administrator, City
+from ..core.cors_utils import create_cors_response, get_cors_headers
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -67,15 +68,8 @@ async def read_masters(
             "notes": master.notes
         })
     
-    return JSONResponse(
-        content=masters_data,
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content=masters_data, headers=cors_headers)
 
 
 @router.get("/masters/{master_id}")
@@ -139,14 +133,10 @@ async def delete_master(
     await db.delete(master)
     await db.commit()
     
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
     return JSONResponse(
         content={"message": "Master deleted successfully"},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
+        headers=cors_headers
     )
 
 
@@ -164,15 +154,7 @@ async def create_new_employee(
 @router.options("/employees/")
 async def employees_options():
     """Handle preflight requests for employees endpoint"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    return create_cors_response(allowed_methods="GET, POST, PUT, DELETE, OPTIONS")
 
 @router.get("/employees/")
 async def read_employees(
@@ -210,15 +192,8 @@ async def read_employees(
         }
         employees_data.append(employee_dict)
     
-    return JSONResponse(
-        content=employees_data,
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content=employees_data, headers=cors_headers)
 
 
 @router.get("/employees/{employee_id}", response_model=EmployeeResponse)
@@ -282,15 +257,8 @@ async def delete_employee(
     await db.delete(employee)
     await db.commit()
     
-    return JSONResponse(
-        content={"message": "Employee deleted successfully"},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content={"message": "Employee deleted successfully"}, headers=cors_headers)
 
 
 # Роуты для администраторов
@@ -307,15 +275,7 @@ async def create_new_administrator(
 @router.options("/administrators/")
 async def administrators_options():
     """Handle preflight requests for administrators endpoint"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    return create_cors_response(allowed_methods="GET, POST, PUT, DELETE, OPTIONS")
 
 @router.get("/administrators/")
 async def read_administrators(
@@ -351,15 +311,8 @@ async def read_administrators(
         }
         administrators_data.append(admin_dict)
     
-    return JSONResponse(
-        content=administrators_data,
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content=administrators_data, headers=cors_headers)
 
 
 @router.get("/administrators/{administrator_id}", response_model=AdministratorResponse)
@@ -426,30 +379,15 @@ async def delete_administrator(
     await db.delete(administrator)
     await db.commit()
     
-    return JSONResponse(
-        content={"message": "Administrator deleted successfully"},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content={"message": "Administrator deleted successfully"}, headers=cors_headers)
 
 
 # Дополнительные эндпоинты для получения справочных данных
 @router.options("/cities/")
 async def cities_options():
     """Handle preflight requests for cities endpoint"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    return create_cors_response(allowed_methods="GET, POST, PUT, DELETE, OPTIONS")
 
 @router.get("/cities/")
 async def get_cities_list(
@@ -464,29 +402,14 @@ async def get_cities_list(
     # Преобразуем в простые словари
     cities_data = [{"id": city.id, "name": city.name} for city in cities]
     
-    return JSONResponse(
-        content=cities_data,
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content=cities_data, headers=cors_headers)
 
 
 @router.options("/roles/")
 async def roles_options():
     """Handle preflight requests for roles endpoint"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    )
+    return create_cors_response(allowed_methods="GET, POST, PUT, DELETE, OPTIONS")
 
 @router.get("/roles/")
 async def get_roles_list(
@@ -504,12 +427,5 @@ async def get_roles_list(
     # Преобразуем в простые словари
     roles_data = [{"id": role.id, "name": role.name} for role in roles]
     
-    return JSONResponse(
-        content=roles_data,
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true"
-        }
-    ) 
+    cors_headers = get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+    return JSONResponse(content=roles_data, headers=cors_headers) 

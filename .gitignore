@@ -81,3 +81,21 @@ docker-compose.override.yml
 # Build outputs
 frontend/dist/
 frontend/build/ 
+
+logs
+dev-debug.log
+# Dependency directories
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/ 

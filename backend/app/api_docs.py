@@ -82,7 +82,7 @@ API использует JWT токены для аутентификации. �
         routes=app.routes,
         servers=[
             {"url": "http://localhost:8000", "description": "Development server"},
-            {"url": "https://api.yourdomain.com", "description": "Production server"}
+            {"url": "https://lead-schem.ru/api/v1", "description": "Production server"}
         ],
         tags=[
             {

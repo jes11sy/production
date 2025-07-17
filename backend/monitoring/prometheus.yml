@@ -10,7 +10,7 @@ scrape_configs:
   # Конфигурация для сбора метрик с нашего бэкенда
   - job_name: 'request-backend'
     static_configs:
-      - targets: ['localhost:8000']
+      - targets: ['leadschem_backend:8000']
     metrics_path: '/metrics/prometheus'
     scrape_interval: 30s
     scrape_timeout: 10s
@@ -31,19 +31,19 @@ scrape_configs:
   # Конфигурация для сбора метрик с самого Prometheus
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['leadschem_prometheus:9090']
 
   # Конфигурация для сбора метрик с Redis (если используется)
   - job_name: 'redis'
     static_configs:
-      - targets: ['localhost:6379']
+      - targets: ['redis:6379']
     metrics_path: '/metrics'
     scrape_interval: 30s
 
   # Конфигурация для сбора метрик с PostgreSQL (если используется)
   - job_name: 'postgres'
     static_configs:
-      - targets: ['localhost:5432']
+      - targets: ['leadschem_postgres:5432']
     metrics_path: '/metrics'
     scrape_interval: 30s
 

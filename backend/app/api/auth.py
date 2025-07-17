@@ -10,6 +10,7 @@ from ..core.enhanced_schemas import UserLogin as EnhancedUserLogin, TokenRespons
 from ..core.models import Master, Employee, Administrator
 from ..core.config import settings
 from ..core.security import LoginAttemptTracker, get_client_ip, CSRFProtection
+from ..core.cors_utils import create_cors_response, get_cors_headers
 import secrets
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -17,28 +18,12 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @router.options("/login")
 async def login_options():
     """Обработчик OPTIONS запросов для CORS"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-        }
-    )
+    return create_cors_response(allowed_methods="POST, OPTIONS")
 
 @router.options("/me")
 async def me_options():
     """Обработчик OPTIONS запросов для /me эндпоинта"""
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-        }
-    )
+    return create_cors_response(allowed_methods="GET, OPTIONS")
 
 
 @router.post("/login", response_model=TokenResponse, responses={
@@ -138,10 +123,9 @@ async def login(user_credentials: EnhancedUserLogin, request: Request, response:
     )
     
     # Добавляем CORS заголовки
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    cors_headers = get_cors_headers("POST, OPTIONS")
+    for key, value in cors_headers.items():
+        response.headers[key] = value
     
     return {
         "access_token": access_token,
@@ -208,11 +192,8 @@ async def read_users_me(current_user: Master | Employee | Administrator = Depend
         base["city_id"] = current_user.city_id
     
     # Добавляем CORS заголовки
-    response = JSONResponse(content=base)
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    cors_headers = get_cors_headers("GET, OPTIONS")
+    response = JSONResponse(content=base, headers=cors_headers)
     return response
 
 
