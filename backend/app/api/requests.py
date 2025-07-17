@@ -207,17 +207,23 @@ async def update_existing_request(
 ):
     """Обновление заявки"""
     try:
-        logger.info(f"Updating request {request_id} with data: {request.dict()}")
+        logger.info(f"=== ОБНОВЛЕНИЕ ЗАЯВКИ {request_id} ===")
+        logger.info(f"Данные запроса: {request.dict()}")
+        logger.info(f"Пользователь: {current_user}")
+        
         updated_request = await update_request(db=db, request_id=request_id, request=request)
         if updated_request is None:
+            logger.error(f"Заявка {request_id} не найдена!")
             raise HTTPException(status_code=404, detail="Request not found")
-        logger.info(f"Successfully updated request {request_id}")
+        
+        logger.info(f"✅ Успешно обновлена заявка {request_id}")
         return updated_request
-    except HTTPException:
-        # Пропускаем HTTP исключения как есть
+    except HTTPException as http_ex:
+        logger.error(f"HTTP ошибка при обновлении заявки {request_id}: {http_ex.detail}")
         raise
     except Exception as e:
-        logger.error(f"Error updating request {request_id}: {str(e)}", exc_info=True)
+        logger.error(f"🚨 КРИТИЧЕСКАЯ ОШИБКА при обновлении заявки {request_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
         raise HTTPException(
             status_code=500, 
             detail={
