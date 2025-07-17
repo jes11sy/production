@@ -53,7 +53,7 @@ const RequestViewPage: React.FC = () => {
     return await advertisingCampaignsApi.getAdvertisingCampaigns();
   }, []);
 
-  const { data: request, loading, error } = useApiData(loadRequestData);
+  const { data: request, loading, error, refetch: refetchRequest } = useApiData(loadRequestData);
   const { 
     data: apiData, 
     loading: multiLoading, 
@@ -96,6 +96,9 @@ const RequestViewPage: React.FC = () => {
       setRecordingFile(null);
       
       showSuccess('Данные успешно сохранены');
+      
+      // Перезагружаем данные заявки чтобы отобразить актуальный статус
+      await refetchRequest();
     } catch (error) {
       console.error('Error saving request:', error);
       showError('Ошибка сохранения данных');
@@ -103,7 +106,7 @@ const RequestViewPage: React.FC = () => {
       setSaving(false);
       setUploading(false);
     }
-  }, [requestId, editForm, bsoFile, expenseFile, recordingFile, showSuccess, showError]);
+  }, [requestId, editForm, bsoFile, expenseFile, recordingFile, showSuccess, showError, refetchRequest]);
 
   const handleInputChange = useCallback((field: keyof typeof editForm, value: any) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
