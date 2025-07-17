@@ -17,7 +17,7 @@ services:
       POSTGRESQL_PORT: ${POSTGRESQL_PORT:-5432}
       
       # Redis (локальный)
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:Fuck2015@@redis:6379/0
       
       # Безопасность (используем переменные окружения)
       SECRET_KEY: ${SECRET_KEY}
@@ -103,11 +103,11 @@ services:
     networks:
       - leadschem_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "Fuck2015@", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass Fuck2015@ --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
 
   # Prometheus для мониторинга
   prometheus:
