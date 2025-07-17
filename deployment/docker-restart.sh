@@ -80,11 +80,15 @@ restart_frontend() {
     docker-compose -f $COMPOSE_FILE stop frontend || true
     docker-compose -f $COMPOSE_FILE rm -f frontend || true
     
-    # Удалить образ frontend принудительно
-    FRONTEND_IMAGE=$(docker-compose -f $COMPOSE_FILE images -q frontend 2>/dev/null || echo "")
-    if [ ! -z "$FRONTEND_IMAGE" ]; then
-        docker rmi -f $FRONTEND_IMAGE || true
-    fi
+    # Удалить ВСЕ образы содержащие deployment (более агрессивно)
+    log "🧹 Принудительное удаление всех связанных образов..."
+    docker images | grep deployment | awk '{print $3}' | xargs -r docker rmi -f || true
+    docker images | grep frontend | awk '{print $3}' | xargs -r docker rmi -f || true
+    
+    # Очистить весь Docker build cache
+    log "🧹 Очистка Docker build cache..."
+    docker builder prune -f || true
+    docker system prune -f || true
     
     log "🔨 Пересборка frontend образа БЕЗ КЭША..."
     docker-compose -f $COMPOSE_FILE build frontend --no-cache --force-rm --pull
