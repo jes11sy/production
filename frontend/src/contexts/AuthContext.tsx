@@ -8,6 +8,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (login: string, password: string) => Promise<User>
   logout: () => Promise<void>
+  checkAuth: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -30,22 +31,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await authApi.getCurrentUser()
-        setUser(userData)
-      } catch (error: unknown) {
-        // Cookie недоступен или недействителен
-        const status = (error as { response?: { status?: number } })?.response?.status;
-        console.log('Auth check failed:', status)
-        setUser(null)
-        // Очищаем CSRF токен при ошибке аутентификации
-        localStorage.removeItem('csrf_token')
-      }
-      setIsLoading(false)
+  const checkAuth = async () => {
+    setIsLoading(true)
+    try {
+      const userData = await authApi.getCurrentUser()
+      setUser(userData)
+    } catch (error: unknown) {
+      // Cookie недоступен или недействителен
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      console.log('Auth check failed:', status)
+      setUser(null)
+      // Очищаем CSRF токен при ошибке аутентификации
+      localStorage.removeItem('csrf_token')
     }
+    setIsLoading(false)
+  }
 
+  useEffect(() => {
     checkAuth()
   }, [])
 
@@ -100,6 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
+    checkAuth
   }
 
   return (
