@@ -36,13 +36,7 @@ module.exports = {
                     runtime: 'automatic'
                   }
                 },
-                minify: isProduction ? {
-                  compress: {
-                    drop_console: true,
-                    drop_debugger: true
-                  },
-                  mangle: true
-                } : undefined
+                minify: isProduction
               }
             }
           }
@@ -77,18 +71,7 @@ module.exports = {
     new (require('@rspack/core').HtmlRspackPlugin)({
       template: './index.html',
       filename: 'index.html',
-      minify: isProduction ? {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true
-      } : false
+      minify: isProduction
     }),
     new (require('@rspack/core').DefinePlugin)({
       'process.env.API_URL': JSON.stringify(process.env.API_URL || '/api/v1'),
