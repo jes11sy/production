@@ -6,13 +6,10 @@
   "scripts": {
     "dev": "rspack serve --config rspack.config.cjs",
     "build": "rspack build --config rspack.config.cjs",
-    "dev:vite": "vite",
-    "build:vite": "tsc -b && vite build",
     "build:production": "node build-production.cjs",
     "start:production": "node production-server.cjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
