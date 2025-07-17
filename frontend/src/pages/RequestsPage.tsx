@@ -23,11 +23,11 @@ import { usersApi } from '../api/users';
 import { advertisingCampaignsApi } from '../api/advertisingCampaigns';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppData } from '../contexts/AppDataContext';
-import { useApiData, useMultipleApiData } from '../hooks/useApiData';
+import { useApiData, useMultipleApiData, useDebouncedValue } from '../hooks/useApiData';
 import type { RequestStatus } from '../types/api';
 
 interface RequestFilters {
-  status?: RequestStatus | '' | undefined;
+  status?: RequestStatus | string | undefined;
   city_id?: number;
   request_type_id?: number;
   direction_id?: number;
@@ -68,6 +68,12 @@ export const RequestsPage: React.FC = () => {
   const { user } = useAuth();
   const { cities, requestTypes, directions, loading: appDataLoading } = useAppData();
   
+  // Состояние для мгновенного поиска (для UI)
+  const [searchInput, setSearchInput] = useState('');
+  
+  // Debounced значение поиска (для API запросов)
+  const debouncedSearch = useDebouncedValue(searchInput, 500);
+  
   // Фильтры
   const [filters, setFilters] = useState<RequestFilters>({
     status: undefined,
@@ -79,8 +85,35 @@ export const RequestsPage: React.FC = () => {
     search: ''
   });
 
-  // Загрузка основных данных
-  const fetchRequests = useCallback(() => requestsApi.getRequests(filters), [filters]);
+  // Обновляем фильтры когда debounced search изменяется
+  React.useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      search: debouncedSearch || undefined
+    }));
+  }, [debouncedSearch]);
+
+  // Загрузка основных данных с актуальными фильтрами
+  const fetchRequests = useCallback(() => {
+    // Создаем параметры запроса, исключая пустые значения
+    const params: any = {};
+    
+    if (filters.status && filters.status !== '') {
+      params.status = filters.status;
+    }
+    if (filters.city_id) {
+      params.city_id = filters.city_id;
+    }
+    if (filters.master_id) {
+      params.master_id = filters.master_id;
+    }
+    if (filters.search && filters.search.trim()) {
+      params.search = filters.search.trim();
+    }
+    
+    return requestsApi.getRequests(params);
+  }, [filters]);
+
   const { 
     data: requestsData, 
     loading: requestsLoading,
@@ -118,11 +151,11 @@ export const RequestsPage: React.FC = () => {
     }));
   }, []);
 
-  const handleSearch = useCallback((value: string) => {
-    handleFilterChange('search', value);
-  }, [handleFilterChange]);
+  const handleSearchInputChange = useCallback((value: string) => {
+    setSearchInput(value);
+  }, []);
 
-  // Фильтрация и сортировка заявок
+  // Фильтрация и сортировка заявок (теперь делается на фронтенде для дополнительных фильтров)
   const filteredRequests = useMemo(() => {
     let result = requests;
 
@@ -139,8 +172,9 @@ export const RequestsPage: React.FC = () => {
     ];
     result = result.filter(request => allowedStatuses.includes(request.status));
 
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
+    // Дополнительная фильтрация по введенному тексту (мгновенная для лучшего UX)
+    if (searchInput && searchInput.trim()) {
+      const searchTerm = searchInput.toLowerCase();
       result = result.filter(request => 
         request.client_name.toLowerCase().includes(searchTerm) ||
         request.client_phone.includes(searchTerm) ||
@@ -175,7 +209,7 @@ export const RequestsPage: React.FC = () => {
     });
 
     return result;
-  }, [requests, filters, getStatusPriority]);
+  }, [requests, filters, searchInput]);
 
   // Обработчики действий
   const handleRowClick = useCallback((requestId: number) => {
@@ -193,14 +227,12 @@ export const RequestsPage: React.FC = () => {
     return mapping?.text || status;
   }, []);
 
-
-
   const formatDate = useCallback((dateString: string) => {
     return dateString ? new Date(dateString).toLocaleDateString('ru-RU') : '-';
   }, []);
 
   // Отображение загрузки
-  if (isLoading) {
+  if (isLoading && !requests.length) {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner size="lg" color="primary" />
@@ -209,7 +241,7 @@ export const RequestsPage: React.FC = () => {
   }
 
   // Отображение ошибки
-  if (requestsError) {
+  if (requestsError && !requests.length) {
     return (
       <div className="min-h-screen w-full px-4">
         <Card className="bg-red-50 border border-red-200">
@@ -232,15 +264,19 @@ export const RequestsPage: React.FC = () => {
         <div className="flex items-center gap-4 mb-4">
           <FunnelIcon className="w-5 h-5 text-gray-500" />
           <h3 className="text-lg font-medium">Фильтры</h3>
+          {requestsLoading && (
+            <Spinner size="sm" color="primary" />
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Input
             placeholder="Поиск по ID, имени, телефону, адресу..."
             startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-500" />}
-            value={filters.search || ''}
-            onValueChange={handleSearch}
+            value={searchInput}
+            onValueChange={handleSearchInputChange}
             isClearable
+            onClear={() => setSearchInput('')}
           />
           
           <Select

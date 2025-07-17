@@ -19,9 +19,11 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { requestsApi, type CreateRequest } from '../api/requests';
+import { advertisingCampaignsApi } from '../api/advertisingCampaigns';
 import { useAppData } from '../contexts/AppDataContext';
-import { useApiData } from '../hooks/useApiData';
+import { useApiData, useMultipleApiData } from '../hooks/useApiData';
 import { useNotification } from '../contexts/NotificationContext';
+import type { UpdateRequestData, RequestStatus } from '../types/api';
 import dayjs from 'dayjs';
 
 const IncomingRequestEditPage: React.FC = () => {
@@ -33,7 +35,12 @@ const IncomingRequestEditPage: React.FC = () => {
   const { cities, requestTypes, directions } = useAppData();
   
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [editForm, setEditForm] = useState<CreateRequest & { status: string }>({
+  const [editForm, setEditForm] = useState<UpdateRequestData & { 
+    city_id: number;
+    request_type_id: number;
+    client_name: string;
+    client_phone: string;
+  }>({
     advertising_campaign_id: undefined,
     client_name: '',
     client_phone: '',
@@ -43,12 +50,13 @@ const IncomingRequestEditPage: React.FC = () => {
     meeting_date: '',
     direction_id: undefined,
     problem: '',
-    status: 'new',
+    status: 'new' as RequestStatus,
     ats_number: '',
     call_center_name: '',
     call_center_notes: ''
   });
 
+  // Загружаем данные заявки
   const loadRequestData = useCallback(async () => {
     const requestData = await requestsApi.getRequest(requestId);
     setEditForm({
@@ -61,7 +69,7 @@ const IncomingRequestEditPage: React.FC = () => {
       meeting_date: requestData.meeting_date || '',
       direction_id: requestData.direction_id || undefined,
       problem: requestData.problem || '',
-      status: requestData.status || 'new',
+      status: (requestData.status as RequestStatus) || 'new',
       ats_number: requestData.ats_number || '',
       call_center_name: requestData.call_center_name || '',
       call_center_notes: requestData.call_center_notes || ''
@@ -69,17 +77,43 @@ const IncomingRequestEditPage: React.FC = () => {
     return requestData;
   }, [requestId]);
 
-  const { data: request, loading, error } = useApiData(loadRequestData);
+  // Загружаем дополнительные данные
+  const additionalApiCalls = useMemo(() => ({
+    advertisingCampaigns: () => advertisingCampaignsApi.getAdvertisingCampaigns()
+  }), []);
+
+  const { data: request, loading: requestLoading, error: requestError } = useApiData(loadRequestData, {
+    errorMessage: 'Ошибка загрузки заявки'
+  });
+
+  const { 
+    data: additionalData,
+    loading: additionalLoading,
+    error: additionalError
+  } = useMultipleApiData(additionalApiCalls, {
+    errorMessage: 'Ошибка загрузки рекламных кампаний'
+  });
+
+  // Мемоизированные данные
+  const advertisingCampaigns = useMemo(() => additionalData?.advertisingCampaigns || [], [additionalData?.advertisingCampaigns]);
 
   const handleUpdateRequest = useCallback(async () => {
     try {
       setUpdateLoading(true);
+      
+      // Валидация обязательных полей
+      if (!editForm.client_name || !editForm.client_phone || !editForm.city_id || !editForm.request_type_id) {
+        showError('Заполните обязательные поля');
+        return;
+      }
+
       await requestsApi.updateRequest(requestId, editForm);
       showSuccess('Заявка успешно обновлена');
       navigate('/incoming-requests');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating request:', error);
-      showError('Ошибка обновления заявки');
+      const errorMessage = error?.response?.data?.detail || error?.message || 'Ошибка обновления заявки';
+      showError(errorMessage);
     } finally {
       setUpdateLoading(false);
     }
@@ -90,7 +124,7 @@ const IncomingRequestEditPage: React.FC = () => {
     handleUpdateRequest();
   }, [handleUpdateRequest]);
 
-  const handleInputChange = useCallback((field: keyof (CreateRequest & { status: string }), value: any) => {
+  const handleInputChange = useCallback((field: keyof typeof editForm, value: any) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -99,10 +133,11 @@ const IncomingRequestEditPage: React.FC = () => {
   const statusBadgeColor = useMemo(() => {
     switch (editForm.status) {
       case 'new': return 'primary';
-      case 'recall': return 'warning';
-      case 'tno': return 'secondary';
-      case 'refused': return 'danger';
-      case 'waiting': return 'default';
+      case 'pending': return 'warning';
+      case 'in_progress': return 'secondary';
+      case 'done': return 'success';
+      case 'completed': return 'success';
+      case 'cancelled': return 'danger';
       default: return 'default';
     }
   }, [editForm.status]);
@@ -110,15 +145,19 @@ const IncomingRequestEditPage: React.FC = () => {
   const statusLabel = useMemo(() => {
     switch (editForm.status) {
       case 'new': return 'Новая';
-      case 'recall': return 'Перезвонить';
-      case 'tno': return 'ТНО';
-      case 'refused': return 'Отказ';
-      case 'waiting': return 'Ожидает';
+      case 'pending': return 'В ожидании';
+      case 'in_progress': return 'В работе';
+      case 'done': return 'Выполнена';
+      case 'completed': return 'Завершена';
+      case 'cancelled': return 'Отменена';
       default: return editForm.status;
     }
   }, [editForm.status]);
 
-  if (loading) {
+  const isLoading = requestLoading || additionalLoading;
+  const hasError = requestError || additionalError;
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner size="lg" color="primary" />
@@ -126,11 +165,11 @@ const IncomingRequestEditPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (hasError) {
     return (
       <div className="max-w-2xl mx-auto px-4">
         <Card className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">
-          {error}
+          {requestError || additionalError}
         </Card>
       </div>
     );
@@ -191,7 +230,7 @@ const IncomingRequestEditPage: React.FC = () => {
                 isRequired
               >
                 {cities.map(city => (
-                  <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
+                  <SelectItem key={city.id}>{city.name}</SelectItem>
                 ))}
               </Select>
               <Input 
@@ -218,7 +257,7 @@ const IncomingRequestEditPage: React.FC = () => {
                 }}
               >
                 {advertisingCampaigns.map(campaign => (
-                  <SelectItem key={campaign.id} value={campaign.id}>
+                  <SelectItem key={campaign.id}>
                     {campaign.name}{campaign.city ? ` (${campaign.city.name})` : ''}
                   </SelectItem>
                 ))}
@@ -234,7 +273,7 @@ const IncomingRequestEditPage: React.FC = () => {
                 isRequired
               >
                 {requestTypes.map(type => (
-                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                  <SelectItem key={type.id}>{type.name}</SelectItem>
                 ))}
               </Select>
               <Input
@@ -255,7 +294,7 @@ const IncomingRequestEditPage: React.FC = () => {
                 }}
               >
                 {directions.map(direction => (
-                  <SelectItem key={direction.id} value={direction.id}>{direction.name}</SelectItem>
+                  <SelectItem key={direction.id}>{direction.name}</SelectItem>
                 ))}
               </Select>
               <Textarea
@@ -268,17 +307,18 @@ const IncomingRequestEditPage: React.FC = () => {
               />
               <Select
                 label="Статус"
-                selectedKeys={[editForm.status]}
+                selectedKeys={editForm.status ? [editForm.status] : []}
                 onSelectionChange={(keys) => {
-                  const selectedKey = Array.from(keys)[0];
+                  const selectedKey = Array.from(keys)[0] as RequestStatus;
                   handleInputChange('status', selectedKey);
                 }}
               >
-                <SelectItem key="new" value="new">Новая</SelectItem>
-                <SelectItem key="recall" value="recall">Перезвонить</SelectItem>
-                <SelectItem key="tno" value="tno">ТНО</SelectItem>
-                <SelectItem key="refused" value="refused">Отказ</SelectItem>
-                <SelectItem key="waiting" value="waiting">Ожидает</SelectItem>
+                <SelectItem key="new">Новая</SelectItem>
+                <SelectItem key="pending">В ожидании</SelectItem>
+                <SelectItem key="in_progress">В работе</SelectItem>
+                <SelectItem key="done">Выполнена</SelectItem>
+                <SelectItem key="completed">Завершена</SelectItem>
+                <SelectItem key="cancelled">Отменена</SelectItem>
               </Select>
             </div>
           </div>
