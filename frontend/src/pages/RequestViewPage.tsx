@@ -34,6 +34,10 @@ const RequestViewPage: React.FC = () => {
 
   const loadRequestData = useCallback(async () => {
     const requestData = await requestsApi.getRequest(requestId);
+    console.log(`🔍 Загружены данные заявки ${requestId}:`, {
+      apiStatus: requestData.status,
+      allData: requestData
+    });
     setEditForm({
       status: requestData.status || 'waiting',
       master_id: Number(requestData.master_id) || 0,
@@ -41,6 +45,7 @@ const RequestViewPage: React.FC = () => {
       expense: Number(requestData.expenses) || 0,
       result: Number(requestData.result) || 0
     });
+    console.log(`📝 Установлен editForm статус:`, requestData.status || 'waiting');
     return requestData;
   }, [requestId]);
 
@@ -75,6 +80,7 @@ const RequestViewPage: React.FC = () => {
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
+      console.log(`💾 Начинается сохранение заявки ${requestId} со статусом:`, editForm.status);
       const updateData = {
         status: editForm.status as any,
         master_id: editForm.master_id || undefined,
@@ -83,7 +89,10 @@ const RequestViewPage: React.FC = () => {
         result: String(editForm.result),
         master_handover: masterHandover,
       };
-      await requestsApi.updateRequest(requestId, updateData);
+      console.log(`📤 Отправляемые данные:`, updateData);
+      
+      const savedData = await requestsApi.updateRequest(requestId, updateData);
+      console.log(`✅ Ответ от сервера:`, savedData);
       
       // После успешного сохранения — загружаем файлы, если выбраны
       setUploading(true);
@@ -97,8 +106,10 @@ const RequestViewPage: React.FC = () => {
       
       showSuccess('Данные успешно сохранены');
       
+      console.log(`🔄 Начинается перезагрузка данных заявки ${requestId}`);
       // Перезагружаем данные заявки чтобы отобразить актуальный статус
       await refetchRequest();
+      console.log(`✅ Данные заявки ${requestId} перезагружены`);
     } catch (error) {
       console.error('Error saving request:', error);
       showError('Ошибка сохранения данных');
@@ -106,7 +117,7 @@ const RequestViewPage: React.FC = () => {
       setSaving(false);
       setUploading(false);
     }
-  }, [requestId, editForm, bsoFile, expenseFile, recordingFile, showSuccess, showError, refetchRequest]);
+  }, [requestId, editForm, bsoFile, expenseFile, recordingFile, showSuccess, showError, refetchRequest, masterHandover]);
 
   const handleInputChange = useCallback((field: keyof typeof editForm, value: any) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
