@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     # Security settings
     DEBUG: bool = False
     ALLOWED_HOSTS: str = "localhost,127.0.0.1"
-    RATE_LIMIT_PER_MINUTE: int = 100
+    RATE_LIMIT_PER_MINUTE: int = 1000  # Временно увеличили в 10 раз
     LOGIN_ATTEMPTS_PER_HOUR: int = 5
     
     @property

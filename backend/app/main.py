@@ -217,11 +217,12 @@ setup_api_documentation(app)
 if settings.ENVIRONMENT == "production":
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestSizeLimitMiddleware, max_size=100 * 1024 * 1024)  # 100MB
-    app.add_middleware(
-        RateLimitMiddleware,
-        max_requests=settings.RATE_LIMIT_PER_MINUTE,
-        window_seconds=60
-    )
+    # Временно отключаем Rate Limiter для отладки 429 ошибок
+    # app.add_middleware(
+    #     RateLimitMiddleware,
+    #     max_requests=settings.RATE_LIMIT_PER_MINUTE,
+    #     window_seconds=60
+    # )
     app.add_middleware(CacheMiddleware, cache_ttl=settings.CACHE_TTL)
     app.middleware("http")(MetricsMiddleware(performance_collector))
 
