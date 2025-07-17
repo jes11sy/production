@@ -25,8 +25,14 @@ export const requestsApi = {
     date_from?: string;
     date_to?: string;
   }): Promise<Request[]> => {
+    // Добавляем timestamp для обхода кеша
+    const paramsWithTimestamp = {
+      ...params,
+      _t: Date.now()
+    };
+    
     const response = await apiClient.get('/requests/', { 
-      params,
+      params: paramsWithTimestamp,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
