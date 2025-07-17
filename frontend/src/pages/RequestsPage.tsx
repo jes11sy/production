@@ -133,7 +133,8 @@ export const RequestsPage: React.FC = () => {
   const getStatusColor = useCallback((status: string) => {
     const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'> = {
       'new': 'primary',
-      'pending': 'warning', 
+      'pending': 'warning',
+      'waiting': 'warning',
       'in_progress': 'secondary',
       'done': 'success',
       'completed': 'success',
@@ -145,7 +146,8 @@ export const RequestsPage: React.FC = () => {
   const getStatusText = useCallback((status: string) => {
     const statusTexts: Record<string, string> = {
       'new': 'Новая',
-      'pending': 'Ожидает', 
+      'pending': 'Ожидает',
+      'waiting': 'Ожидает',
       'in_progress': 'В работе',
       'done': 'Выполнена',
       'completed': 'Завершена',
@@ -212,6 +214,7 @@ export const RequestsPage: React.FC = () => {
           >
             <SelectItem key="new">Новая</SelectItem>
             <SelectItem key="pending">Ожидает</SelectItem>
+            <SelectItem key="waiting">Ожидает</SelectItem>
             <SelectItem key="in_progress">В работе</SelectItem>
             <SelectItem key="done">Выполнена</SelectItem>
             <SelectItem key="completed">Завершена</SelectItem>
