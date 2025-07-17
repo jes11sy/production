@@ -158,7 +158,7 @@ class RequestValidator:
     """Валидатор для заявок"""
     
     ALLOWED_STATUSES = [
-        'new', 'in_progress', 'completed', 'cancelled', 'on_hold'
+        'Ожидает', 'Ожидает Принятия', 'Принял', 'В пути', 'В работе', 'Модерн', 'Готово', 'Отказ', 'Новая', 'Перезвонить', 'ТНО'
     ]
     
     @staticmethod

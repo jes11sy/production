@@ -118,7 +118,7 @@ async def delete_master(
     from ..core.models import Request
     requests_query = select(Request).where(
         Request.master_id == master_id,
-        Request.status.in_(["new", "in_progress", "pending"])
+        Request.status.in_(["Ожидает", "Ожидает Принятия", "Принял", "В пути", "В работе", "Модерн", "Новая", "Перезвонить"])
     )
     requests_result = await db.execute(requests_query)
     active_requests = requests_result.scalars().all()

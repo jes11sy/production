@@ -175,7 +175,7 @@ API_EXAMPLES = {
             "meeting_date": "2025-01-20T14:30:00",
             "direction_id": 1,
             "problem": "Не работает кондиционер, требуется диагностика",
-            "status": "new",
+            "status": "Новая",
             "advertising_campaign_id": 1,
             "ats_number": "ATS-2025-001",
             "call_center_name": "Петрова Анна",
@@ -292,7 +292,7 @@ RESPONSE_EXAMPLES = {
             "client_name": "Иванов Иван Иванович",
             "address": "г. Москва, ул. Примерная, д. 123, кв. 45",
             "meeting_date": "2025-01-20T14:30:00",
-            "status": "new",
+            "status": "Новая",
             "created_at": "2025-01-15T10:30:00",
             "city": {
                 "id": 1,

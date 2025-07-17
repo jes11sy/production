@@ -182,7 +182,7 @@ class RequestCreateSchema(BaseModel):
                     "meeting_date": "2025-01-20T14:30:00",
                     "direction_id": 1,
                     "problem": "Не работает кондиционер, требуется диагностика",
-                    "status": "new",
+                    "status": "Новая",
                     "advertising_campaign_id": 1,
                     "ats_number": "ATS-2025-001",
                     "call_center_name": "Петрова Анна",
@@ -241,7 +241,7 @@ class RequestUpdateSchema(BaseModel):
                     "master_handover": 1230.00
                 },
                 {
-                    "status": "in_progress",
+                    "status": "В работе",
                     "master_id": 1,
                     "master_notes": "Начата диагностика"
                 }
@@ -282,7 +282,7 @@ class RequestResponseSchema(BaseModel):
     client_name: Optional[str] = Field(None, description="Имя клиента", example="Иванов Иван Иванович")
     address: Optional[str] = Field(None, description="Адрес клиента", example="г. Москва, ул. Примерная, д. 123, кв. 45")
     meeting_date: Optional[datetime] = Field(None, description="Дата и время встречи", example="2025-01-20T14:30:00")
-    status: str = Field(..., description="Статус заявки", example="new")
+    status: str = Field(..., description="Статус заявки", example="Новая")
     created_at: datetime = Field(..., description="Дата создания", example="2025-01-15T10:30:00")
     
     # Связанные объекты
