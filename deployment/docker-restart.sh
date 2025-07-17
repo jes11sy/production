@@ -45,9 +45,9 @@ cleanup_project() {
     # Удалить все образы проекта
     docker-compose -f $COMPOSE_FILE down --rmi all --volumes || true
     
-    # Дополнительная очистка
-    docker system prune -f || true
-    docker builder prune -f || true
+    # Дополнительная очистка ВКЛЮЧАЯ multi-stage builds
+    docker system prune -a --force || true
+    docker builder prune --all --force || true
     
     log "✅ Очистка завершена"
 }
@@ -85,10 +85,10 @@ restart_frontend() {
     docker images | grep deployment | awk '{print $3}' | xargs -r docker rmi -f || true
     docker images | grep frontend | awk '{print $3}' | xargs -r docker rmi -f || true
     
-    # Очистить весь Docker build cache
-    log "🧹 Очистка Docker build cache..."
-    docker builder prune -f || true
-    docker system prune -f || true
+    # Очистить весь Docker build cache ВКЛЮЧАЯ multi-stage builds
+    log "🧹 Очистка Docker build cache (включая multi-stage builds)..."
+    docker builder prune --all --force || true
+    docker system prune -a --force || true
     
     log "🔨 Пересборка frontend образа БЕЗ КЭША..."
     docker-compose -f $COMPOSE_FILE build frontend --no-cache --force-rm --pull
