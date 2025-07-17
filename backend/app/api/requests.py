@@ -359,13 +359,13 @@ async def get_callcenter_report(
     result = await db.execute(query)
     requests = result.scalars().all()
     
-    # Подсчитываем статистику
+    # Подсчитываем статистику  
     stats = {
         'total': len(requests),
-        'new': len([r for r in requests if r.status == 'new']),
-        'in_progress': len([r for r in requests if r.status == 'in_progress']),
-        'done': len([r for r in requests if r.status == 'done']),
-        'cancelled': len([r for r in requests if r.status == 'cancelled'])
+        'new': len([r for r in requests if str(r.status) == 'Новая']),
+        'in_progress': len([r for r in requests if str(r.status) == 'В работе']),
+        'done': len([r for r in requests if str(r.status) == 'Готово']),
+        'cancelled': len([r for r in requests if str(r.status) == 'Отказ'])
     }
     
     # Статистика по городам
@@ -375,7 +375,16 @@ async def get_callcenter_report(
         if city_name not in city_stats:
             city_stats[city_name] = {'total': 0, 'new': 0, 'in_progress': 0, 'done': 0, 'cancelled': 0}
         city_stats[city_name]['total'] += 1
-        city_stats[city_name][request.status] += 1
+        # Маппинг русских статусов к английским ключам для совместимости API
+        status_str = str(request.status)
+        if status_str == 'Новая':
+            city_stats[city_name]['new'] += 1
+        elif status_str == 'В работе':
+            city_stats[city_name]['in_progress'] += 1
+        elif status_str == 'Готово':
+            city_stats[city_name]['done'] += 1
+        elif status_str == 'Отказ':
+            city_stats[city_name]['cancelled'] += 1
     
     return {
         'requests': [

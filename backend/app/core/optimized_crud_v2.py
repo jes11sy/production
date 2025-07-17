@@ -313,7 +313,7 @@ class OptimizedCRUDv2:
             "city_distribution": city_stats,
             "type_distribution": type_stats,
             "conversion_rate": round(
-                (status_stats.get("done", 0) / total_count * 100) if total_count > 0 else 0, 2
+                (status_stats.get("Готово", 0) / total_count * 100) if total_count > 0 else 0, 2
             )
         }
     
