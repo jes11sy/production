@@ -6,7 +6,6 @@
 set -e
 
 COMPOSE_FILE="docker-compose.production.yml"
-PROJECT_NAME="leadschem"
 
 # Цвета для вывода
 RED='\033[0;31m'
@@ -44,30 +43,16 @@ cleanup_project() {
     docker-compose -f $COMPOSE_FILE down --remove-orphans || true
     
     # Удалить все образы проекта
-    docker images | grep $PROJECT_NAME | awk '{print $3}' | xargs -r docker rmi -f || true
+    docker-compose -f $COMPOSE_FILE down --rmi all --volumes || true
     
-    # Удалить неиспользуемые образы и кэш
+    # Дополнительная очистка
     docker system prune -f || true
     docker builder prune -f || true
     
     log "✅ Очистка завершена"
 }
 
-# Функция очистки конкретного сервиса
-cleanup_service() {
-    local service=$1
-    log "🧹 Очистка сервиса: $service"
-    
-    # Остановить сервис
-    docker-compose -f $COMPOSE_FILE stop $service || true
-    docker-compose -f $COMPOSE_FILE rm -f $service || true
-    
-    # Удалить образ сервиса
-    local image_name="${PROJECT_NAME}_${service}"
-    docker images | grep $image_name | awk '{print $3}' | xargs -r docker rmi -f || true
-    
-    log "✅ Очистка $service завершена"
-}
+
 
 # 1. Полный перезапуск проекта
 restart_full() {
@@ -76,7 +61,7 @@ restart_full() {
     cleanup_project
     
     log "🔨 Пересборка всех образов..."
-    docker-compose -f $COMPOSE_FILE build --no-cache --force-rm
+    docker-compose -f $COMPOSE_FILE build --no-cache --force-rm --pull
     
     log "▶️ Запуск всех сервисов..."
     docker-compose -f $COMPOSE_FILE up -d
@@ -91,10 +76,18 @@ restart_full() {
 restart_frontend() {
     log "🎨 Перезапуск ФРОНТЕНДА..."
     
-    cleanup_service "frontend"
+    # Остановить frontend
+    docker-compose -f $COMPOSE_FILE stop frontend || true
+    docker-compose -f $COMPOSE_FILE rm -f frontend || true
     
-    log "🔨 Пересборка frontend образа..."
-    docker-compose -f $COMPOSE_FILE build frontend --no-cache --force-rm
+    # Удалить образ frontend принудительно
+    FRONTEND_IMAGE=$(docker-compose -f $COMPOSE_FILE images -q frontend 2>/dev/null || echo "")
+    if [ ! -z "$FRONTEND_IMAGE" ]; then
+        docker rmi -f $FRONTEND_IMAGE || true
+    fi
+    
+    log "🔨 Пересборка frontend образа БЕЗ КЭША..."
+    docker-compose -f $COMPOSE_FILE build frontend --no-cache --force-rm --pull
     
     log "▶️ Запуск frontend..."
     docker-compose -f $COMPOSE_FILE up -d frontend
@@ -109,10 +102,18 @@ restart_frontend() {
 restart_backend() {
     log "⚙️ Перезапуск БЭКЕНДА..."
     
-    cleanup_service "backend"
+    # Остановить backend
+    docker-compose -f $COMPOSE_FILE stop backend || true
+    docker-compose -f $COMPOSE_FILE rm -f backend || true
+    
+    # Удалить образ backend принудительно
+    BACKEND_IMAGE=$(docker-compose -f $COMPOSE_FILE images -q backend 2>/dev/null || echo "")
+    if [ ! -z "$BACKEND_IMAGE" ]; then
+        docker rmi -f $BACKEND_IMAGE || true
+    fi
     
     log "🔨 Пересборка backend образа..."
-    docker-compose -f $COMPOSE_FILE build backend --no-cache --force-rm
+    docker-compose -f $COMPOSE_FILE build backend --no-cache --force-rm --pull
     
     log "▶️ Запуск backend..."
     docker-compose -f $COMPOSE_FILE up -d backend
@@ -127,7 +128,9 @@ restart_backend() {
 restart_nginx() {
     log "🌐 Перезапуск NGINX..."
     
-    cleanup_service "nginx-proxy"
+    # Остановить nginx-proxy
+    docker-compose -f $COMPOSE_FILE stop nginx-proxy || true
+    docker-compose -f $COMPOSE_FILE rm -f nginx-proxy || true
     
     log "▶️ Запуск nginx..."
     docker-compose -f $COMPOSE_FILE up -d nginx-proxy
@@ -142,7 +145,9 @@ restart_nginx() {
 restart_redis() {
     log "📦 Перезапуск REDIS..."
     
-    cleanup_service "redis"
+    # Остановить redis
+    docker-compose -f $COMPOSE_FILE stop redis || true
+    docker-compose -f $COMPOSE_FILE rm -f redis || true
     
     log "▶️ Запуск redis..."
     docker-compose -f $COMPOSE_FILE up -d redis
@@ -157,8 +162,9 @@ restart_redis() {
 restart_monitoring() {
     log "📈 Перезапуск МОНИТОРИНГА..."
     
-    cleanup_service "grafana"
-    cleanup_service "prometheus"
+    # Остановить мониторинг
+    docker-compose -f $COMPOSE_FILE stop grafana prometheus || true
+    docker-compose -f $COMPOSE_FILE rm -f grafana prometheus || true
     
     log "▶️ Запуск мониторинга..."
     docker-compose -f $COMPOSE_FILE up -d grafana prometheus
