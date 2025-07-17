@@ -1,21 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   FunnelIcon,
-  MagnifyingGlassIcon,
-  DocumentTextIcon,
-  UserIcon,
-  PhoneIcon,
-  MapPinIcon,
-  CalendarIcon,
-  BanknotesIcon,
-  WrenchScrewdriverIcon
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Input,
-  Button,
-  Badge,
   Chip,
   Table,
   TableHeader,
@@ -52,7 +43,7 @@ export const RequestsPage: React.FC = () => {
   
   // Фильтры
   const [filters, setFilters] = useState<RequestFilters>({
-    status: '',
+    status: undefined,
     city_id: undefined,
     request_type_id: undefined,
     direction_id: undefined,
@@ -113,11 +104,12 @@ export const RequestsPage: React.FC = () => {
       result = result.filter(request => 
         request.client_name.toLowerCase().includes(searchTerm) ||
         request.client_phone.includes(searchTerm) ||
-        request.address?.toLowerCase().includes(searchTerm)
+        request.address?.toLowerCase().includes(searchTerm) ||
+        request.id.toString().includes(searchTerm)
       );
     }
 
-    if (filters.status && filters.status !== '') {
+    if (filters.status && filters.status !== undefined) {
       result = result.filter(request => request.status === filters.status);
     }
 
@@ -135,10 +127,6 @@ export const RequestsPage: React.FC = () => {
   // Обработчики действий
   const handleRowClick = useCallback((requestId: number) => {
     navigate(`/requests/${requestId}`);
-  }, [navigate]);
-
-  const handleCreateRequest = useCallback(() => {
-    navigate('/incoming-requests/create');
   }, [navigate]);
 
   // Вспомогательные функции
@@ -170,24 +158,6 @@ export const RequestsPage: React.FC = () => {
     return dateString ? new Date(dateString).toLocaleDateString('ru-RU') : '-';
   }, []);
 
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency',
-      currency: 'RUB'
-    }).format(amount);
-  }, []);
-
-  // Подсчет статистики
-  const stats = useMemo(() => {
-    return {
-      total: filteredRequests.length,
-      new: filteredRequests.filter(r => r.status === 'new').length,
-      inProgress: filteredRequests.filter(r => r.status === 'in_progress').length,
-      completed: filteredRequests.filter(r => ['done', 'completed'].includes(r.status)).length,
-      cancelled: filteredRequests.filter(r => r.status === 'cancelled').length
-    };
-  }, [filteredRequests]);
-
   // Отображение загрузки
   if (isLoading) {
     return (
@@ -200,7 +170,7 @@ export const RequestsPage: React.FC = () => {
   // Отображение ошибки
   if (requestsError) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen w-full px-4">
         <Card className="bg-red-50 border border-red-200">
           <div className="p-4 text-red-700">{requestsError}</div>
         </Card>
@@ -209,83 +179,15 @@ export const RequestsPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen w-full">
       {/* Заголовок */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Заявки</h1>
-            <p className="mt-2 text-gray-600">Управление заявками клиентов</p>
-          </div>
-          <Button
-            color="primary"
-            startContent={<DocumentTextIcon className="w-5 h-5" />}
-            onPress={handleCreateRequest}
-          >
-            Новая заявка
-          </Button>
-        </div>
-      </div>
-
-      {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center">
-            <DocumentTextIcon className="w-8 h-8 text-blue-500" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Всего</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Новые</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.new}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">В работе</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Выполнено</p>
-              <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Отменено</p>
-              <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
-            </div>
-          </div>
-        </Card>
+      <div className="mb-4 px-4">
+        <h1 className="text-3xl font-bold text-gray-900">Заявки</h1>
+        <p className="mt-2 text-gray-600">Управление заявками клиентов</p>
       </div>
 
       {/* Фильтры */}
-      <Card className="p-6 mb-6">
+      <Card className="mx-4 mb-4 p-4">
         <div className="flex items-center gap-4 mb-4">
           <FunnelIcon className="w-5 h-5 text-gray-500" />
           <h3 className="text-lg font-medium">Фильтры</h3>
@@ -293,7 +195,7 @@ export const RequestsPage: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Input
-            placeholder="Поиск по имени, телефону, адресу..."
+            placeholder="Поиск по ID, имени, телефону, адресу..."
             startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-500" />}
             value={filters.search || ''}
             onValueChange={handleSearch}
@@ -348,122 +250,103 @@ export const RequestsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Таблица заявок */}
-      <Card>
-        <Table 
-          aria-label="Таблица заявок"
-          classNames={{
-            wrapper: "min-h-[400px]",
-          }}
-        >
-          <TableHeader>
-            <TableColumn>
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4" />
-                КЛИЕНТ
-              </div>
-            </TableColumn>
-            <TableColumn>
-              <div className="flex items-center gap-2">
-                <PhoneIcon className="w-4 h-4" />
-                ТЕЛЕФОН
-              </div>
-            </TableColumn>
-            <TableColumn>
-              <div className="flex items-center gap-2">
-                <MapPinIcon className="w-4 h-4" />
-                АДРЕС
-              </div>
-            </TableColumn>
-            <TableColumn>
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4" />
-                ДАТА
-              </div>
-            </TableColumn>
-            <TableColumn>СТАТУС</TableColumn>
-            <TableColumn>
-              <div className="flex items-center gap-2">
-                <WrenchScrewdriverIcon className="w-4 h-4" />
-                МАСТЕР
-              </div>
-            </TableColumn>
-            <TableColumn>
-              <div className="flex items-center gap-2">
-                <BanknotesIcon className="w-4 h-4" />
-                СУММА
-              </div>
-            </TableColumn>
-          </TableHeader>
-          <TableBody>
-            {filteredRequests.map((request) => (
-              <TableRow 
-                key={request.id}
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleRowClick(request.id)}
-              >
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{request.client_name}</div>
-                    <div className="text-sm text-gray-500">{request.city.name}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-mono">{request.client_phone}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-xs truncate">{request.address || '-'}</div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <div>{formatDate(request.created_at)}</div>
-                    {request.meeting_date && (
-                      <div className="text-sm text-gray-500">
-                        Встреча: {formatDate(request.meeting_date)}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    color={getStatusColor(request.status)}
-                    size="sm"
-                    variant="flat"
-                  >
-                    {getStatusText(request.status)}
-                  </Chip>
-                </TableCell>
-                <TableCell>
-                  {request.master ? (
-                    <div>
-                      <div className="font-medium">{request.master.full_name}</div>
-                      <div className="text-sm text-gray-500">{request.master.phone_number}</div>
+      {/* Таблица заявок на весь экран */}
+      <div className="px-4">
+        <Card className="w-full">
+          <Table 
+            aria-label="Таблица заявок"
+            classNames={{
+              wrapper: "min-h-[calc(100vh-300px)] w-full",
+              table: "w-full",
+            }}
+          >
+            <TableHeader>
+              <TableColumn width="60">ID</TableColumn>
+              <TableColumn width="120">РК</TableColumn>
+              <TableColumn width="100">ГОРОД</TableColumn>
+              <TableColumn width="120">ТИП ЗАЯВКИ</TableColumn>
+              <TableColumn width="130">ТЕЛЕФОН</TableColumn>
+              <TableColumn width="150">ИМЯ КЛИЕНТА</TableColumn>
+              <TableColumn width="200">АДРЕС</TableColumn>
+              <TableColumn width="120">ДАТА ВСТРЕЧИ</TableColumn>
+              <TableColumn width="120">НАПРАВЛЕНИЕ</TableColumn>
+              <TableColumn width="150">ПРОБЛЕМА</TableColumn>
+              <TableColumn width="100">СТАТУС</TableColumn>
+              <TableColumn width="150">МАСТЕР</TableColumn>
+              <TableColumn width="150">ИТОГ</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {filteredRequests.map((request) => (
+                <TableRow 
+                  key={request.id}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleRowClick(request.id)}
+                >
+                  <TableCell>
+                    <div className="font-mono text-sm">{request.id}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs truncate">
+                      {request.advertising_campaign?.name || '-'}
                     </div>
-                  ) : (
-                    <Badge color="warning" variant="flat">Не назначен</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div>
-                    {request.net_amount > 0 ? (
-                      <div className="font-medium text-green-600">
-                        {formatCurrency(request.net_amount)}
-                      </div>
-                    ) : (
-                      <div className="text-gray-500">-</div>
-                    )}
-                    {request.expenses > 0 && (
-                      <div className="text-sm text-red-500">
-                        Расходы: {formatCurrency(request.expenses)}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">{request.city.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">{request.request_type.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-mono text-sm">{request.client_phone}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">{request.client_name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm truncate max-w-[200px]" title={request.address}>
+                      {request.address || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {request.meeting_date ? formatDate(request.meeting_date) : '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {request.direction?.name || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm truncate max-w-[150px]" title={request.problem}>
+                      {request.problem || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      color={getStatusColor(request.status)}
+                      size="sm"
+                      variant="flat"
+                    >
+                      {getStatusText(request.status)}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {request.master?.full_name || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm truncate max-w-[150px]" title={request.result}>
+                      {request.result || '-'}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
     </div>
   );
 }; 
