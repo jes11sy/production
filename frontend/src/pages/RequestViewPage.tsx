@@ -17,10 +17,16 @@ const RequestViewPage: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  // Редактируемые поля
-  const [editForm, setEditForm] = useState({
-    status: '',
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const [editForm, setEditForm] = useState<{
+    status: string;
+    master_id: number;
+    net_amount: number;
+    expense: number;
+    result: number;
+  }>({
+    status: 'waiting',
     master_id: 0,
     net_amount: 0,
     expense: 0,
@@ -38,16 +44,22 @@ const RequestViewPage: React.FC = () => {
       apiStatus: requestData.status,
       allData: requestData
     });
-    setEditForm({
-      status: requestData.status || 'waiting',
-      master_id: Number(requestData.master_id) || 0,
-      net_amount: Number(requestData.net_amount) || 0,
-      expense: Number(requestData.expenses) || 0,
-      result: Number(requestData.result) || 0
-    });
-    console.log(`📝 Установлен editForm статус:`, requestData.status || 'waiting');
+    
+    // Не перезаписываем данные формы если пользователь редактирует
+    if (!isEditing) {
+      setEditForm({
+        status: requestData.status || 'waiting',
+        master_id: Number(requestData.master_id) || 0,
+        net_amount: Number(requestData.net_amount) || 0,
+        expense: Number(requestData.expenses) || 0,
+        result: Number(requestData.result) || 0
+      });
+      console.log(`📝 Установлен editForm статус:`, requestData.status || 'waiting');
+    } else {
+      console.log(`🚫 Пропускаем обновление editForm - пользователь редактирует`);
+    }
     return requestData;
-  }, [requestId]);
+  }, [requestId, isEditing]);
 
   const loadMastersData = useCallback(async () => {
     return await requestsApi.getMasters();
@@ -108,6 +120,9 @@ const RequestViewPage: React.FC = () => {
       
       console.log(`🔄 Начинается перезагрузка данных заявки ${requestId}`);
       
+      // Сбрасываем флаг редактирования чтобы разрешить обновление данных
+      setIsEditing(false);
+      
       // Небольшая задержка чтобы сервер успел зафиксировать изменения
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -124,6 +139,8 @@ const RequestViewPage: React.FC = () => {
   }, [requestId, editForm, bsoFile, expenseFile, recordingFile, showSuccess, showError, refetchRequest, masterHandover]);
 
   const handleInputChange = useCallback((field: keyof typeof editForm, value: any) => {
+    console.log(`📝 Обновляется поле ${field}:`, value);
+    setIsEditing(true); // Отмечаем что пользователь начал редактирование
     setEditForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
