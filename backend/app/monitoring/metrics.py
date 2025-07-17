@@ -276,7 +276,7 @@ class BusinessMetricsCollector:
                 
                 # Конверсия заявок
                 completed_requests = await db.scalar(
-                    text("SELECT COUNT(*) FROM requests WHERE status = 'completed'")
+                    text("SELECT COUNT(*) FROM requests WHERE status = 'Готово'")
                 )
                 conversion_rate = (completed_requests / total_requests * 100) if total_requests > 0 else 0
                 self.metrics.set_gauge("conversion_rate", conversion_rate)
@@ -286,7 +286,7 @@ class BusinessMetricsCollector:
                     text("""
                         SELECT AVG(EXTRACT(EPOCH FROM (updated_at - created_at)))
                         FROM requests 
-                        WHERE status = 'completed' AND updated_at IS NOT NULL
+                        WHERE status = 'Готово' AND updated_at IS NOT NULL
                     """)
                 )
                 processing_time = float(avg_processing_time) if avg_processing_time else 0

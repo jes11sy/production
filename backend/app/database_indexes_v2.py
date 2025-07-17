@@ -46,7 +46,7 @@ PERFORMANCE_INDEXES_V2 = [
           Request.city_id,
           Request.status,
           Request.master_id,
-          postgresql_where=text("status IN ('new', 'assigned')")),
+          postgresql_where=text("status IN ('Новая', 'Принял')")),
     
     # Индекс для поиска записей звонков
     Index('idx_requests_phone_datetime_v2', 
@@ -58,7 +58,7 @@ PERFORMANCE_INDEXES_V2 = [
           Request.city_id,
           Request.status,
           Request.created_at.desc(),
-          postgresql_where=text("status IN ('done', 'cancelled')")),
+          postgresql_where=text("status IN ('Готово', 'Отказ')")),
     
     # === ТРАНЗАКЦИИ (TRANSACTIONS) ===
     
@@ -149,7 +149,7 @@ SPECIALIZED_INDEXES = [
           Request.client_phone,
           Request.status,
           Request.created_at.desc(),
-          postgresql_where=text("status = 'new'")),
+          postgresql_where=text("status = 'Новая'")),
     
     # Индексы для Mango Office интеграции
     Index('idx_requests_mango_integration_v2',

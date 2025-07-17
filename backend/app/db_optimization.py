@@ -187,7 +187,7 @@ class DatabaseOptimizer:
             UPDATE requests 
             SET status = 'archived' 
             WHERE created_at < NOW() - INTERVAL '{days_to_keep} days'
-            AND status IN ('done', 'cancelled')
+            AND status IN ('Готово', 'Отказ')
             """,
         ]
         
