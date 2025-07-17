@@ -381,15 +381,27 @@ async def get_request(db: AsyncSession, request_id: int) -> Optional[Request]:
 
 
 async def update_request(db: AsyncSession, request_id: int, request: RequestUpdate) -> Optional[Request]:
+    import logging
+    logger = logging.getLogger(__name__)
+    
     result = await db.execute(select(Request).where(Request.id == request_id))
     db_request = result.scalar_one_or_none()
     if db_request:
         old_status = db_request.status  # Сохраняем старый статус
+        logger.info(f"🔍 CRUD: Текущий статус заявки {request_id}: {old_status}")
+        
         update_data = request.dict(exclude_unset=True)
+        logger.info(f"📝 CRUD: Данные для обновления: {update_data}")
+        
         for field, value in update_data.items():
+            logger.info(f"🔧 CRUD: Устанавливаем {field} = {value}")
             setattr(db_request, field, value)
+        
+        logger.info(f"💾 CRUD: Статус после setattr: {db_request.status}")
         await db.commit()
+        logger.info(f"✅ CRUD: Коммит выполнен")
         await db.refresh(db_request)
+        logger.info(f"🔄 CRUD: Статус после refresh: {db_request.status}")
 
         # === Бизнес-логика по транзакциям ===
         # Временно отключена из-за ошибок типизации
@@ -404,6 +416,7 @@ async def update_request(db: AsyncSession, request_id: int, request: RequestUpda
         # except Exception as e:
         #     logger.error(f"Error in transaction business logic for request {request_id}: {e}")
         await db.commit()
+        logger.info(f"🔒 CRUD: Финальный коммит выполнен")
         # === END бизнес-логика ===
         
         # Получить обновленную заявку с подгруженными связанными данными
@@ -419,7 +432,9 @@ async def update_request(db: AsyncSession, request_id: int, request: RequestUpda
             )
             .where(Request.id == request_id)
         )
-        return result.scalar_one_or_none()
+        final_request = result.scalar_one_or_none()
+        logger.info(f"🎯 CRUD: Финальный статус заявки {request_id}: {final_request.status if final_request else 'None'}")
+        return final_request
     return None
 
 
