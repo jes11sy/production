@@ -35,8 +35,7 @@ module.exports = {
                   react: {
                     runtime: 'automatic'
                   }
-                },
-                minify: isProduction
+                }
               }
             }
           }
