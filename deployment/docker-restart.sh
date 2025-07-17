@@ -5,7 +5,7 @@
 
 set -e
 
-COMPOSE_FILE="docker-compose.production.yml"
+COMPOSE_FILE="deployment/docker-compose.production.yml"
 
 # Цвета для вывода
 RED='\033[0;31m'
