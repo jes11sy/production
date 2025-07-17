@@ -393,59 +393,70 @@ async def read_request(
     current_user: Master | Employee | Administrator = Depends(require_callcenter)
 ):
     """Получение заявки по ID (оптимизированная версия)"""
-    request = await get_request_optimized(db, request_id=request_id)
-    if request is None:
-        raise HTTPException(status_code=404, detail="Request not found")
-    
-    # Простая сериализация в словарь
-    request_data = {
-        "id": request.id,
-        "advertising_campaign_id": request.advertising_campaign_id,
-        "city_id": request.city_id,
-        "request_type_id": request.request_type_id,
-        "client_phone": request.client_phone,
-        "client_name": request.client_name,
-        "address": request.address,
-        "meeting_date": request.meeting_date.isoformat() if request.meeting_date else None,
-        "direction_id": request.direction_id,
-        "problem": request.problem,
-        "status": request.status,
-        "master_id": request.master_id,
-        "master_notes": request.master_notes,
-        "result": float(request.result) if request.result is not None else 0,
-        "expenses": float(request.expenses) if request.expenses is not None else 0,
-        "net_amount": float(request.net_amount) if request.net_amount is not None else 0,
-        "master_handover": float(request.master_handover) if request.master_handover is not None else 0,
-        "ats_number": request.ats_number,
-        "call_center_name": request.call_center_name,
-        "call_center_notes": request.call_center_notes,
-        "avito_chat_id": request.avito_chat_id,
-        "created_at": request.created_at.isoformat() if request.created_at else None,
-        "bso_file_path": request.bso_file_path,
-        "expense_file_path": request.expense_file_path,
-        "recording_file_path": request.recording_file_path,
-    }
-    
-    # Добавляем связанные объекты если они есть
-    if hasattr(request, 'city') and request.city:
-        request_data["city"] = {"id": request.city.id, "name": request.city.name}
-    if hasattr(request, 'request_type') and request.request_type:
-        request_data["request_type"] = {"id": request.request_type.id, "name": request.request_type.name}
-    if hasattr(request, 'direction') and request.direction:
-        request_data["direction"] = {"id": request.direction.id, "name": request.direction.name}
-    if hasattr(request, 'master') and request.master:
-        request_data["master"] = {"id": request.master.id, "full_name": request.master.full_name}
-    
-    return JSONResponse(
-        content=request_data,
-        headers={
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    try:
+        request = await get_request_optimized(db, request_id=request_id)
+        if request is None:
+            raise HTTPException(status_code=404, detail="Request not found")
+        
+        # Простая сериализация в словарь
+        request_data = {
+            "id": request.id,
+            "advertising_campaign_id": request.advertising_campaign_id,
+            "city_id": request.city_id,
+            "request_type_id": request.request_type_id,
+            "client_phone": request.client_phone,
+            "client_name": request.client_name,
+            "address": request.address,
+            "meeting_date": request.meeting_date.isoformat() if request.meeting_date else None,
+            "direction_id": request.direction_id,
+            "problem": request.problem,
+            "status": request.status,
+            "master_id": request.master_id,
+            "master_notes": request.master_notes,
+            "result": float(request.result) if request.result is not None else 0,
+            "expenses": float(request.expenses) if request.expenses is not None else 0,
+            "net_amount": float(request.net_amount) if request.net_amount is not None else 0,
+            "master_handover": float(request.master_handover) if request.master_handover is not None else 0,
+            "ats_number": request.ats_number,
+            "call_center_name": request.call_center_name,
+            "call_center_notes": request.call_center_notes,
+            "avito_chat_id": request.avito_chat_id,
+            "created_at": request.created_at.isoformat() if request.created_at else None,
+            "bso_file_path": request.bso_file_path,
+            "expense_file_path": request.expense_file_path,
+            "recording_file_path": request.recording_file_path,
         }
-    )
+        
+        # Добавляем связанные объекты если они есть
+        if hasattr(request, 'city') and request.city:
+            request_data["city"] = {"id": request.city.id, "name": request.city.name}
+        if hasattr(request, 'request_type') and request.request_type:
+            request_data["request_type"] = {"id": request.request_type.id, "name": request.request_type.name}
+        if hasattr(request, 'direction') and request.direction:
+            request_data["direction"] = {"id": request.direction.id, "name": request.direction.name}
+        if hasattr(request, 'master') and request.master:
+            request_data["master"] = {"id": request.master.id, "full_name": request.master.full_name}
+        
+        return JSONResponse(
+            content=request_data,
+            headers=get_cors_headers("GET, POST, PUT, DELETE, OPTIONS")
+        )
+    except HTTPException:
+        # Перебрасываем HTTP исключения как есть
+        raise
+    except Exception as e:
+        # Логируем и возвращаем детальную ошибку для отладки
+        import traceback
+        error_detail = {
+            "error": str(e),
+            "type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+        print(f"Error in read_request for ID {request_id}: {error_detail}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Internal server error: {str(e)}"
+        )
 
 
 # --- Загрузка файлов к заявке ---
