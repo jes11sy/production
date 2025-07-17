@@ -30,6 +30,35 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+# Автоматическая установка Docker
+install_docker() {
+    print_step "Установка Docker и Docker Compose..."
+    
+    # Обновление системы
+    apt update
+    apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+    
+    # Добавление официального GPG ключа Docker
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    
+    # Добавление репозитория Docker
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Установка Docker Engine
+    apt update
+    apt install -y docker-ce docker-ce-cli containerd.io
+    
+    # Установка Docker Compose
+    curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    
+    # Запуск Docker
+    systemctl start docker
+    systemctl enable docker
+    
+    print_success "Docker и Docker Compose успешно установлены!"
+}
+
 # Проверка и создание .env файла
 setup_environment() {
     print_step "Настройка переменных окружения..."
@@ -99,14 +128,14 @@ check_requirements() {
     
     # Проверка Docker
     if ! command -v docker &> /dev/null; then
-        print_error "Docker не установлен! Установите Docker и повторите попытку."
-        exit 1
+        print_warning "Docker не установлен! Автоматически устанавливаю..."
+        install_docker
     fi
     
     # Проверка Docker Compose
     if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        print_error "Docker Compose не установлен! Установите Docker Compose и повторите попытку."
-        exit 1
+        print_warning "Docker Compose не установлен! Автоматически устанавливаю..."
+        install_docker
     fi
     
     # Проверка доступности портов
