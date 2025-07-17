@@ -70,7 +70,7 @@ class RequestBase(BaseModel):
     meeting_date: Optional[datetime] = None
     direction_id: Optional[int] = None
     problem: Optional[str] = None
-    status: str = Field(default="new", max_length=50)
+    status: str = Field(default="Новая", max_length=50)
     master_id: Optional[int] = None
     master_notes: Optional[str] = None
     result: Optional[Decimal] = Field(None, decimal_places=2)
@@ -154,7 +154,7 @@ class RequestCreate(BaseModel):
     meeting_date: Optional[datetime] = None
     direction_id: Optional[int] = None
     problem: Optional[str] = None
-    status: str = Field(default="new", max_length=50)
+    status: str = Field(default="Новая", max_length=50)
     master_id: Optional[int] = None
     master_notes: Optional[str] = None
     result: Optional[Decimal] = Field(None, decimal_places=2)

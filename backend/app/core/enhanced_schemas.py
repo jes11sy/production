@@ -10,12 +10,17 @@ from enum import Enum
 
 # Перечисления для статусов
 class RequestStatus(str, Enum):
-    NEW = "new"
-    ASSIGNED = "assigned"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-    ON_HOLD = "on_hold"
+    NEW = "Новая"
+    WAITING = "Ожидает"
+    WAITING_ACCEPTANCE = "Ожидает Принятия"
+    ACCEPTED = "Принял"
+    ON_WAY = "В пути"
+    IN_PROGRESS = "В работе"
+    MODERN = "Модерн"
+    COMPLETED = "Готово"
+    REJECTED = "Отказ"
+    CALLBACK = "Перезвонить"
+    TNO = "ТНО"
 
 
 class UserStatus(str, Enum):
@@ -202,7 +207,7 @@ class RequestCreateSchema(BaseModel):
     meeting_date: Optional[datetime] = Field(None, description="Дата и время встречи", example="2025-01-20T14:30:00")
     direction_id: Optional[int] = Field(None, description="ID направления", example=1)
     problem: Optional[str] = Field(None, description="Описание проблемы", example="Не работает кондиционер, требуется диагностика")
-    status: RequestStatus = Field(default=RequestStatus.NEW, description="Статус заявки", example="new")
+    status: RequestStatus = Field(default=RequestStatus.NEW, description="Статус заявки", example="Новая")
     master_id: Optional[int] = Field(None, description="ID назначенного мастера", example=1)
     master_notes: Optional[str] = Field(None, description="Заметки мастера", example="Требуется дополнительная диагностика")
     result: Optional[Decimal] = Field(None, decimal_places=2, description="Результат работы (сумма)", example=2500.00)

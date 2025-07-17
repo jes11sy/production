@@ -141,7 +141,7 @@ class Request(Base):
     meeting_date = Column(DateTime(timezone=True))
     direction_id = Column(Integer, ForeignKey("directions.id"))
     problem = Column(Text)
-    status = Column(String(50), default="new")
+    status = Column(String(50), default="Новая")
     master_id = Column(Integer, ForeignKey("masters.id"))
     master_notes = Column(Text)
     result = Column(Numeric(10, 2), nullable=True)

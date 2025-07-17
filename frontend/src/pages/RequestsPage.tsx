@@ -36,6 +36,39 @@ interface RequestFilters {
   search?: string;
 }
 
+// Маппинги статусов на русский язык с цветами
+const statusMappings = {
+  'Новая': { text: 'Новая', color: 'primary' as const },
+  'Ожидает': { text: 'Ожидает', color: 'warning' as const },
+  'Ожидает Принятия': { text: 'Ожидает Принятия', color: 'primary' as const },
+  'Принял': { text: 'Принял', color: 'secondary' as const },
+  'В пути': { text: 'В пути', color: 'secondary' as const },
+  'В работе': { text: 'В работе', color: 'primary' as const },
+  'Модерн': { text: 'Модерн', color: 'primary' as const },
+  'Готово': { text: 'Готово', color: 'success' as const },
+  'Отказ': { text: 'Отказ', color: 'danger' as const },
+  'Перезвонить': { text: 'Перезвонить', color: 'warning' as const },
+  'ТНО': { text: 'ТНО', color: 'secondary' as const },
+};
+
+// Приоритеты статусов для сортировки
+const getStatusPriority = (status: string): number => {
+  const priorities: { [key: string]: number } = {
+    'Новая': 1,
+    'Перезвонить': 2,
+    'ТНО': 3,
+    'Ожидает': 4,
+    'Ожидает Принятия': 5,
+    'Принял': 6,
+    'В пути': 7,
+    'В работе': 8,
+    'Модерн': 9,
+    'Готово': 10,
+    'Отказ': 11,
+  };
+  return priorities[status] || 999;
+};
+
 export const RequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -95,20 +128,6 @@ export const RequestsPage: React.FC = () => {
     handleFilterChange('search', value);
   }, [handleFilterChange]);
 
-  // Приоритет статусов для сортировки
-  const getStatusPriority = useCallback((status: string) => {
-    const statusPriority: Record<string, number> = {
-      'waiting': 1,           // Ожидает
-      'waiting_acceptance': 2, // Ожидает принятия
-      'accepted': 3,          // Принял
-      'on_way': 4,           // В пути
-      'in_progress': 5,      // В работе
-      'done': 6,             // Готово
-      'rejected': 7          // Отказ
-    };
-    return statusPriority[status] || 999;
-  }, []);
-
   // Фильтрация и сортировка заявок
   const filteredRequests = useMemo(() => {
     let result = requests;
@@ -158,29 +177,13 @@ export const RequestsPage: React.FC = () => {
 
   // Вспомогательные функции
   const getStatusColor = useCallback((status: string) => {
-    const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'> = {
-      'waiting': 'warning',            // Ожидает - желтый
-      'waiting_acceptance': 'primary', // Ожидает принятия - синий
-      'accepted': 'secondary',         // Принял - серый
-      'on_way': 'secondary',          // В пути - серый
-      'in_progress': 'primary',       // В работе - синий
-      'done': 'success',              // Готово - зеленый
-      'rejected': 'danger'            // Отказ - красный
-    };
-    return statusColors[status] || 'default';
+    const mapping = statusMappings[status as keyof typeof statusMappings];
+    return mapping?.color || 'default';
   }, []);
 
   const getStatusText = useCallback((status: string) => {
-    const statusTexts: Record<string, string> = {
-      'waiting': 'Ожидает',
-      'waiting_acceptance': 'Ожидает принятия',
-      'accepted': 'Принял',
-      'on_way': 'В пути',
-      'in_progress': 'В работе',
-      'done': 'Готово',
-      'rejected': 'Отказ'
-    };
-    return statusTexts[status] || status;
+    const mapping = statusMappings[status as keyof typeof statusMappings];
+    return mapping?.text || status;
   }, []);
 
 
@@ -241,13 +244,17 @@ export const RequestsPage: React.FC = () => {
               handleFilterChange('status', value);
             }}
           >
-            <SelectItem key="waiting">Ожидает</SelectItem>
-            <SelectItem key="waiting_acceptance">Ожидает принятия</SelectItem>
-            <SelectItem key="accepted">Принял</SelectItem>
-            <SelectItem key="on_way">В пути</SelectItem>
-            <SelectItem key="in_progress">В работе</SelectItem>
-            <SelectItem key="done">Готово</SelectItem>
-            <SelectItem key="rejected">Отказ</SelectItem>
+            <SelectItem key="Новая">Новая</SelectItem>
+            <SelectItem key="Перезвонить">Перезвонить</SelectItem>
+            <SelectItem key="ТНО">ТНО</SelectItem>
+            <SelectItem key="Ожидает">Ожидает</SelectItem>
+            <SelectItem key="Ожидает Принятия">Ожидает Принятия</SelectItem>
+            <SelectItem key="Принял">Принял</SelectItem>
+            <SelectItem key="В пути">В пути</SelectItem>
+            <SelectItem key="В работе">В работе</SelectItem>
+            <SelectItem key="Модерн">Модерн</SelectItem>
+            <SelectItem key="Готово">Готово</SelectItem>
+            <SelectItem key="Отказ">Отказ</SelectItem>
           </Select>
           
           <Select
