@@ -55,14 +55,7 @@ async def login(user_credentials: EnhancedUserLogin, request: Request, response:
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Временно отключаем проверку статуса для отладки
-    # if str(user.status) != "active":
-    #     # Записываем неудачную попытку (неактивный пользователь)
-    #     LoginAttemptTracker.record_login_attempt(client_ip, user_credentials.login, False, user_agent)
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Inactive user"
-    #     )
+    # Пропускаем проверку статуса пока не разберемся с бесконечными запросами
     
     # Записываем успешную попытку
     LoginAttemptTracker.record_login_attempt(client_ip, user_credentials.login, True, user_agent)
