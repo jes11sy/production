@@ -19,8 +19,12 @@ export interface ApiError {
   details?: Record<string, unknown>;
 }
 
-// Типы для статусов
-export type RequestStatus = 'new' | 'pending' | 'in_progress' | 'done' | 'completed' | 'cancelled';
+// Типы для статусов  
+export type RequestStatus = 
+  // Английские статусы (legacy)
+  | 'new' | 'pending' | 'in_progress' | 'done' | 'completed' | 'cancelled'
+  // Русские статусы (текущие)
+  | 'Новая' | 'Перезвонить' | 'ТНО' | 'Отказ' | 'В работе' | 'Готово' | 'Принял';
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
 export type UserStatus = 'active' | 'inactive' | 'blocked';
 export type MasterStatus = 'active' | 'inactive' | 'busy';

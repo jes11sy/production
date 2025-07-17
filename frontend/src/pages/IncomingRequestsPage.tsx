@@ -93,7 +93,7 @@ const IncomingRequestsPage: React.FC = () => {
   const isLoading = requestsLoading || additionalLoading || appDataLoading.cities || appDataLoading.requestTypes;
 
   // Фильтрация входящих заявок
-  const allowedStatuses = ['new', 'recall', 'tno', 'refused'];
+  const allowedStatuses = ['Новая', 'Перезвонить', 'ТНО', 'Отказ'];
   const filteredRequests = useMemo(() => {
     return requests.filter(r => allowedStatuses.includes(r.status));
   }, [requests]);
@@ -153,10 +153,10 @@ const IncomingRequestsPage: React.FC = () => {
   // Вспомогательные функции
   const getStatusBadge = useCallback((status: string) => {
     const statusConfig = {
-      'new': { label: 'Новая', color: 'primary' as const },
-      'recall': { label: 'Перезвон', color: 'warning' as const },
-      'tno': { label: 'ТНО', color: 'secondary' as const },
-      'refused': { label: 'Отказ', color: 'danger' as const }
+      'Новая': { label: 'Новая', color: 'primary' as const },
+      'Перезвонить': { label: 'Перезвон', color: 'warning' as const },
+      'ТНО': { label: 'ТНО', color: 'secondary' as const },
+      'Отказ': { label: 'Отказ', color: 'danger' as const }
     };
     const config = statusConfig[status as keyof typeof statusConfig] || { 
       label: status, 
@@ -220,7 +220,7 @@ const IncomingRequestsPage: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Новые</p>
               <p className="text-2xl font-bold text-blue-600">
-                {filteredRequests.filter(r => r.status === 'new').length}
+                {filteredRequests.filter(r => r.status === 'Новая').length}
               </p>
             </div>
           </div>
@@ -233,7 +233,7 @@ const IncomingRequestsPage: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Перезвон</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {filteredRequests.filter(r => r.status === 'recall').length}
+                {filteredRequests.filter(r => r.status === 'Перезвонить').length}
               </p>
             </div>
           </div>
@@ -246,7 +246,7 @@ const IncomingRequestsPage: React.FC = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Отказы</p>
               <p className="text-2xl font-bold text-red-600">
-                {filteredRequests.filter(r => r.status === 'refused').length}
+                {filteredRequests.filter(r => r.status === 'Отказ').length}
               </p>
             </div>
           </div>
