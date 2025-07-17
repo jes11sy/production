@@ -74,7 +74,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, excluded_paths: Optional[list] = None):
         super().__init__(app)
         self.excluded_paths = excluded_paths or [
-            "/docs", "/redoc", "/openapi.json", "/api/v1/auth/login",
+            "/docs", "/redoc", "/openapi.json", "/api/auth/login",
             "/api/v1/health", "/api/v1/mango/webhook"
         ]
     
