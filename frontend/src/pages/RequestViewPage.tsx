@@ -304,15 +304,17 @@ const RequestViewPage: React.FC = () => {
                 handleInputChange('status', selectedKey);
               }}
             >
-              <SelectItem key="waiting">Ожидает</SelectItem>
-              <SelectItem key="waiting_acceptance">Ожидает принятия</SelectItem>
-              <SelectItem key="accepted">Принял</SelectItem>
-              <SelectItem key="in_way">В пути</SelectItem>
-              <SelectItem key="in_work">В работе</SelectItem>
-              <SelectItem key="done">Готово</SelectItem>
-              <SelectItem key="refused">Отказ</SelectItem>
-              <SelectItem key="modern">Модерн</SelectItem>
-              <SelectItem key="no_order">НеЗаказ</SelectItem>
+              <SelectItem key="Новая">Новая</SelectItem>
+              <SelectItem key="Ожидает">Ожидает</SelectItem>
+              <SelectItem key="Ожидает Принятия">Ожидает Принятия</SelectItem>
+              <SelectItem key="Принял">Принял</SelectItem>
+              <SelectItem key="В пути">В пути</SelectItem>
+              <SelectItem key="В работе">В работе</SelectItem>
+              <SelectItem key="Модерн">Модерн</SelectItem>
+              <SelectItem key="Готово">Готово</SelectItem>
+              <SelectItem key="Отказ">Отказ</SelectItem>
+              <SelectItem key="Перезвонить">Перезвонить</SelectItem>
+              <SelectItem key="ТНО">ТНО</SelectItem>
             </Select>
             
             <Select
@@ -324,7 +326,7 @@ const RequestViewPage: React.FC = () => {
               }}
             >
               <SelectItem key="0">Не назначен</SelectItem>
-              {masters && Array.isArray(masters) && masters.length > 0 && masters.map((master: Master) => (
+              {(masters || []).map((master: Master) => (
                 <SelectItem key={String(master.id)}>{master.full_name}</SelectItem>
               ))}
             </Select>

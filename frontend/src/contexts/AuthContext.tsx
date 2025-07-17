@@ -40,6 +40,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const status = (error as { response?: { status?: number } })?.response?.status;
         console.log('Auth check failed:', status)
         setUser(null)
+        // Очищаем CSRF токен при ошибке аутентификации
+        localStorage.removeItem('csrf_token')
       }
       setIsLoading(false)
     }
@@ -50,6 +52,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (login: string, password: string) => {
     const response = await authApi.login({ login, password })
     // Cookie устанавливается автоматически сервером
+    
+    // Сохраняем CSRF токен в localStorage
+    if (response.csrf_token) {
+      localStorage.setItem('csrf_token', response.csrf_token)
+    }
     
     // Небольшая задержка для обработки cookie на сервере
     await new Promise(resolve => setTimeout(resolve, 100))
@@ -79,10 +86,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       await authApi.logout()
-    } catch {
-      // Игнорируем ошибки при выходе
+    } catch (error) {
+      console.error('Logout error:', error)
     }
-    // Cookie удаляется автоматически сервером
+    // Очищаем CSRF токен при выходе
+    localStorage.removeItem('csrf_token')
     setUser(null)
   }
 
