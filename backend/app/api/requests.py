@@ -198,14 +198,14 @@ async def read_requests(
     } for req in requests]
 
 
-@router.put("/{request_id}/", response_model=RequestResponse)
+@router.put("/{request_id}/")
 async def update_existing_request(
     request_id: int,
     request: RequestUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: Master | Employee | Administrator = Depends(require_callcenter)
 ):
-    """Обновление заявки"""
+    """Обновление заявки (простая сериализация в словарь)"""
     try:
         logger.info(f"=== ОБНОВЛЕНИЕ ЗАЯВКИ {request_id} ===")
         logger.info(f"Данные запроса: {request.dict()}")
@@ -218,61 +218,75 @@ async def update_existing_request(
         
         logger.info(f"✅ Успешно обновлена заявка {request_id}")
         
-        # Преобразуем SQLAlchemy модель в Pydantic для правильной сериализации (Pydantic v1)
-        try:
-            # В Pydantic v1 используем from_orm() для преобразования SQLAlchemy в Pydantic
-            response_data = RequestResponse.from_orm(updated_request)
-            logger.info(f"✅ Успешно сериализована заявка {request_id}")
-            return response_data
-        except Exception as serialize_error:
-            logger.error(f"❌ Ошибка from_orm для заявки {request_id}: {str(serialize_error)}", exc_info=True)
-            
-            # Пробуем создать минимальный ответ для Pydantic v1
-            try:
-                # Создаем словарь с базовыми полями
-                basic_dict = {
-                    "id": updated_request.id,
-                    "created_at": updated_request.created_at,
-                    "updated_at": updated_request.updated_at,
-                    "advertising_campaign_id": updated_request.advertising_campaign_id,
-                    "city_id": updated_request.city_id,
-                    "request_type_id": updated_request.request_type_id,
-                    "client_phone": updated_request.client_phone,
-                    "client_name": updated_request.client_name,
-                    "address": updated_request.address,
-                    "meeting_date": updated_request.meeting_date,
-                    "direction_id": updated_request.direction_id,
-                    "problem": updated_request.problem,
-                    "status": updated_request.status,
-                    "master_id": updated_request.master_id,
-                    "master_notes": updated_request.master_notes,
-                    "result": float(updated_request.result) if updated_request.result else 0.0,
-                    "expenses": float(updated_request.expenses) if updated_request.expenses else 0.0,
-                    "net_amount": float(updated_request.net_amount) if updated_request.net_amount else 0.0,
-                    "master_handover": float(updated_request.master_handover) if updated_request.master_handover else 0.0,
-                    "ats_number": updated_request.ats_number,
-                    "call_center_name": updated_request.call_center_name,
-                    "call_center_notes": updated_request.call_center_notes,
-                    "avito_chat_id": updated_request.avito_chat_id,
-                    "bso_file_path": updated_request.bso_file_path,
-                    "expense_file_path": updated_request.expense_file_path,
-                    "recording_file_path": updated_request.recording_file_path,
-                }
-                
-                # Используем parse_obj для Pydantic v1
-                manual_response = RequestResponse.parse_obj(basic_dict)
-                logger.info(f"✅ Создан ручной ответ через parse_obj для заявки {request_id}")
-                return manual_response
-                
-            except Exception as parse_error:
-                logger.error(f"❌ Ошибка parse_obj для заявки {request_id}: {str(parse_error)}", exc_info=True)
-                
-                # Последняя попытка - возвращаем простой JSON ответ
-                return {
-                    "id": updated_request.id,
-                    "status": updated_request.status,
-                    "message": "Заявка успешно обновлена"
-                }
+        # Простая сериализация в словарь (как в других endpoints)
+        response_data = {
+            "id": updated_request.id,
+            "advertising_campaign_id": updated_request.advertising_campaign_id,
+            "city_id": updated_request.city_id,
+            "request_type_id": updated_request.request_type_id,
+            "client_phone": updated_request.client_phone,
+            "client_name": updated_request.client_name,
+            "address": updated_request.address,
+            "meeting_date": updated_request.meeting_date.isoformat() if updated_request.meeting_date else None,
+            "direction_id": updated_request.direction_id,
+            "problem": updated_request.problem,
+            "status": updated_request.status,
+            "master_id": updated_request.master_id,
+            "master_notes": updated_request.master_notes,
+            "result": float(updated_request.result) if updated_request.result is not None else 0,
+            "expenses": float(updated_request.expenses) if updated_request.expenses is not None else 0,
+            "net_amount": float(updated_request.net_amount) if updated_request.net_amount is not None else 0,
+            "master_handover": float(updated_request.master_handover) if updated_request.master_handover is not None else 0,
+            "ats_number": updated_request.ats_number,
+            "call_center_name": updated_request.call_center_name,
+            "call_center_notes": updated_request.call_center_notes,
+            "avito_chat_id": updated_request.avito_chat_id,
+            "created_at": updated_request.created_at.isoformat() if updated_request.created_at else None,
+            "updated_at": updated_request.updated_at.isoformat() if updated_request.updated_at else None,
+            "bso_file_path": updated_request.bso_file_path,
+            "expense_file_path": updated_request.expense_file_path,
+            "recording_file_path": updated_request.recording_file_path,
+        }
+        
+        # Добавляем связанные объекты если они есть
+        if hasattr(updated_request, 'city') and updated_request.city:
+            response_data["city"] = {
+                "id": updated_request.city.id,
+                "name": updated_request.city.name
+            }
+        
+        if hasattr(updated_request, 'request_type') and updated_request.request_type:
+            response_data["request_type"] = {
+                "id": updated_request.request_type.id,
+                "name": updated_request.request_type.name
+            }
+        
+        if hasattr(updated_request, 'direction') and updated_request.direction:
+            response_data["direction"] = {
+                "id": updated_request.direction.id,
+                "name": updated_request.direction.name
+            }
+        
+        if hasattr(updated_request, 'master') and updated_request.master:
+            response_data["master"] = {
+                "id": updated_request.master.id,
+                "full_name": updated_request.master.full_name,
+                "phone_number": updated_request.master.phone_number,
+                "login": updated_request.master.login,
+                "city_id": updated_request.master.city_id
+            }
+        
+        if hasattr(updated_request, 'advertising_campaign') and updated_request.advertising_campaign:
+            response_data["advertising_campaign"] = {
+                "id": updated_request.advertising_campaign.id,
+                "name": updated_request.advertising_campaign.name,
+                "phone_number": updated_request.advertising_campaign.phone_number,
+                "city_id": updated_request.advertising_campaign.city_id
+            }
+        
+        logger.info(f"✅ Успешно сериализована заявка {request_id}")
+        return response_data
+        
     except HTTPException as http_ex:
         logger.error(f"HTTP ошибка при обновлении заявки {request_id}: {http_ex.detail}")
         raise
