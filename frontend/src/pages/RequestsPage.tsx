@@ -95,7 +95,21 @@ export const RequestsPage: React.FC = () => {
     handleFilterChange('search', value);
   }, [handleFilterChange]);
 
-  // Фильтрация заявок
+  // Приоритет статусов для сортировки
+  const getStatusPriority = useCallback((status: string) => {
+    const statusPriority: Record<string, number> = {
+      'waiting': 1,           // Ожидает
+      'waiting_acceptance': 2, // Ожидает принятия
+      'accepted': 3,          // Принял
+      'on_way': 4,           // В пути
+      'in_progress': 5,      // В работе
+      'done': 6,             // Готово
+      'rejected': 7          // Отказ
+    };
+    return statusPriority[status] || 999;
+  }, []);
+
+  // Фильтрация и сортировка заявок
   const filteredRequests = useMemo(() => {
     let result = requests;
 
@@ -121,8 +135,21 @@ export const RequestsPage: React.FC = () => {
       result = result.filter(request => request.master_id === filters.master_id);
     }
 
+    // Сортировка по приоритету статусов
+    result = result.sort((a, b) => {
+      const priorityA = getStatusPriority(a.status);
+      const priorityB = getStatusPriority(b.status);
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // Если статусы одинаковые, сортируем по ID (новые сверху)
+      return b.id - a.id;
+    });
+
     return result;
-  }, [requests, filters]);
+  }, [requests, filters, getStatusPriority]);
 
   // Обработчики действий
   const handleRowClick = useCallback((requestId: number) => {
@@ -132,29 +159,31 @@ export const RequestsPage: React.FC = () => {
   // Вспомогательные функции
   const getStatusColor = useCallback((status: string) => {
     const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'> = {
-      'new': 'primary',
-      'pending': 'warning',
-      'waiting': 'warning',
-      'in_progress': 'secondary',
-      'done': 'success',
-      'completed': 'success',
-      'cancelled': 'danger'
+      'waiting': 'warning',            // Ожидает - желтый
+      'waiting_acceptance': 'primary', // Ожидает принятия - синий
+      'accepted': 'secondary',         // Принял - серый
+      'on_way': 'secondary',          // В пути - серый
+      'in_progress': 'primary',       // В работе - синий
+      'done': 'success',              // Готово - зеленый
+      'rejected': 'danger'            // Отказ - красный
     };
     return statusColors[status] || 'default';
   }, []);
 
   const getStatusText = useCallback((status: string) => {
     const statusTexts: Record<string, string> = {
-      'new': 'Новая',
-      'pending': 'Ожидает',
       'waiting': 'Ожидает',
+      'waiting_acceptance': 'Ожидает принятия',
+      'accepted': 'Принял',
+      'on_way': 'В пути',
       'in_progress': 'В работе',
-      'done': 'Выполнена',
-      'completed': 'Завершена',
-      'cancelled': 'Отменена'
+      'done': 'Готово',
+      'rejected': 'Отказ'
     };
     return statusTexts[status] || status;
   }, []);
+
+
 
   const formatDate = useCallback((dateString: string) => {
     return dateString ? new Date(dateString).toLocaleDateString('ru-RU') : '-';
@@ -212,13 +241,13 @@ export const RequestsPage: React.FC = () => {
               handleFilterChange('status', value);
             }}
           >
-            <SelectItem key="new">Новая</SelectItem>
-            <SelectItem key="pending">Ожидает</SelectItem>
             <SelectItem key="waiting">Ожидает</SelectItem>
+            <SelectItem key="waiting_acceptance">Ожидает принятия</SelectItem>
+            <SelectItem key="accepted">Принял</SelectItem>
+            <SelectItem key="on_way">В пути</SelectItem>
             <SelectItem key="in_progress">В работе</SelectItem>
-            <SelectItem key="done">Выполнена</SelectItem>
-            <SelectItem key="completed">Завершена</SelectItem>
-            <SelectItem key="cancelled">Отменена</SelectItem>
+            <SelectItem key="done">Готово</SelectItem>
+            <SelectItem key="rejected">Отказ</SelectItem>
           </Select>
           
           <Select
