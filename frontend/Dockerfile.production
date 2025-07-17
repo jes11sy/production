@@ -1,0 +1,52 @@
+# Multi-stage build для production фронтенда
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Копируем package файлы
+COPY package*.json ./
+
+# Устанавливаем ВСЕ зависимости (включая devDependencies для сборки)
+RUN npm ci
+
+# Копируем исходный код
+COPY . .
+
+# Аргументы сборки для Rspack
+ARG API_URL=/api/v1
+ENV API_URL=$API_URL
+
+# Собираем приложение
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Устанавливаем Express для production сервера локально
+RUN npm init -y && npm install express@4.19.2 http-proxy-middleware@2.0.6
+
+# Копируем собранное приложение
+COPY --from=builder /app/dist ./dist
+
+# Копируем production сервер
+COPY production-server.cjs ./
+
+# Создаем non-root пользователя
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Меняем владельца файлов
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Открываем порт
+EXPOSE 3000
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
+
+# Запускаем приложение
+CMD ["node", "production-server.cjs"] 

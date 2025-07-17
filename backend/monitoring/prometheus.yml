@@ -1,0 +1,59 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Конфигурация для сбора метрик с нашего бэкенда
+  - job_name: 'request-backend'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics/prometheus'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    # Метки для метрик
+    metric_relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.+)'
+        replacement: '${1}'
+    
+    # Фильтрация метрик (опционально)
+    # params:
+    #   'match[]':
+    #     - '{__name__=~"http_.*"}'
+    #     - '{__name__=~"system_.*"}'
+
+  # Конфигурация для сбора метрик с самого Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Конфигурация для сбора метрик с Redis (если используется)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['localhost:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Конфигурация для сбора метрик с PostgreSQL (если используется)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['localhost:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+# Настройки для алертов (опционально)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Настройки для правил алертов (опционально)
+# rule_files:
+#   - "alert_rules.yml" 
