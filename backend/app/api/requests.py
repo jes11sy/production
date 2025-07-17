@@ -220,14 +220,61 @@ async def update_existing_request(
         
         # Преобразуем SQLAlchemy модель в Pydantic для правильной сериализации  
         try:
-            response_data = RequestResponse.model_validate(updated_request)
+            # Используем from_orm для преобразования SQLAlchemy в Pydantic
+            response_data = RequestResponse.from_orm(updated_request)
             logger.info(f"✅ Успешно сериализована заявка {request_id}")
             return response_data
         except Exception as serialize_error:
             logger.error(f"❌ Ошибка сериализации заявки {request_id}: {str(serialize_error)}", exc_info=True)
-            logger.info(f"⚠️ Возвращаем упрощенную версию ответа для заявки {request_id}")
-            # Возвращаем SQLAlchemy модель как есть - FastAPI справится с базовой сериализацией
-            return updated_request
+            
+            # Если from_orm не работает, создаем вручную
+            try:
+                response_dict = {
+                    "id": updated_request.id,
+                    "created_at": updated_request.created_at,
+                    "updated_at": updated_request.updated_at,
+                    "advertising_campaign_id": updated_request.advertising_campaign_id,
+                    "city_id": updated_request.city_id,
+                    "request_type_id": updated_request.request_type_id,
+                    "client_phone": updated_request.client_phone,
+                    "client_name": updated_request.client_name,
+                    "address": updated_request.address,
+                    "meeting_date": updated_request.meeting_date,
+                    "direction_id": updated_request.direction_id,
+                    "problem": updated_request.problem,
+                    "status": updated_request.status,
+                    "master_id": updated_request.master_id,
+                    "master_notes": updated_request.master_notes,
+                    "result": updated_request.result,
+                    "expenses": updated_request.expenses,
+                    "net_amount": updated_request.net_amount,
+                    "master_handover": updated_request.master_handover,
+                    "ats_number": updated_request.ats_number,
+                    "call_center_name": updated_request.call_center_name,
+                    "call_center_notes": updated_request.call_center_notes,
+                    "avito_chat_id": updated_request.avito_chat_id,
+                    "bso_file_path": updated_request.bso_file_path,
+                    "expense_file_path": updated_request.expense_file_path,
+                    "recording_file_path": updated_request.recording_file_path,
+                    # Добавляем связанные объекты как None если они не загружены
+                    "advertising_campaign": None,
+                    "city": None,
+                    "request_type": None,
+                    "direction": None,
+                    "master": None,
+                    "files": []
+                }
+                
+                manual_response = RequestResponse(**response_dict)
+                logger.info(f"✅ Создан ручной ответ для заявки {request_id}")
+                return manual_response
+                
+            except Exception as manual_error:
+                logger.error(f"❌ Ошибка создания ручного ответа для заявки {request_id}: {str(manual_error)}", exc_info=True)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Заявка обновлена, но не удалось сформировать ответ: {str(manual_error)}"
+                )
     except HTTPException as http_ex:
         logger.error(f"HTTP ошибка при обновлении заявки {request_id}: {http_ex.detail}")
         raise
