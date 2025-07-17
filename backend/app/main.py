@@ -233,11 +233,12 @@ except Exception as e:
     logger.warning(f"Could not add error handling middleware: {e}")
 
 # CSRF только для production (может конфликтовать с API тестированием)
-if settings.ENVIRONMENT == "production":
-    try:
-        app.add_middleware(CSRFMiddleware)
-    except Exception as e:
-        logger.warning(f"Could not add CSRF middleware: {e}")
+# Временно отключено для отладки проблем с авторизацией
+# if settings.ENVIRONMENT == "production":
+#     try:
+#         app.add_middleware(CSRFMiddleware)
+#     except Exception as e:
+#         logger.warning(f"Could not add CSRF middleware: {e}")
 
 # Подключение статических файлов
 if os.path.exists("media"):
